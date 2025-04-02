@@ -7,6 +7,9 @@ document.addEventListener("DOMContentLoaded", function() {
   const modalBody = document.getElementById("modal-body");
   const closeModal = document.getElementById("close-modal");
 
+  // Ensure the modal is hidden on initial load
+  modal.style.display = "none";
+
   // Show grid when intro is revealed
   revealButton.addEventListener("click", function() {
     introSection.classList.add("hidden");
@@ -85,20 +88,20 @@ document.addEventListener("DOMContentLoaded", function() {
     card.addEventListener("click", function() {
       const cardId = this.getAttribute("data-card");
       modalBody.innerHTML = cardContent[cardId];
-      modal.classList.remove("hidden");
+      // Show modal as a flex container
+      modal.style.display = "flex";
     });
   });
 
   // Close modal when the close button is clicked
   closeModal.addEventListener("click", function() {
-    console.log("Close button clicked"); // Debug log
-    modal.classList.add("hidden");
+    modal.style.display = "none";
   });
 
-  // Close modal when clicking outside the modal-content
+  // Close modal when clicking outside the modal content
   modal.addEventListener("click", function(e) {
     if (e.target === modal) {
-      modal.classList.add("hidden");
+      modal.style.display = "none";
     }
   });
 });
