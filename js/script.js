@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function() {
     `
   };
 
-  // Add click event listeners to mini-cards
+  // Add click event listeners to mini-cards to open the modal with content
   document.querySelectorAll(".mini-card").forEach(card => {
     card.addEventListener("click", function() {
       const cardId = this.getAttribute("data-card");
@@ -89,8 +89,16 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
-  // Close modal when close button is clicked
+  // Close modal when the close button is clicked
   closeModal.addEventListener("click", function() {
+    console.log("Close button clicked"); // Debug log
     modal.classList.add("hidden");
+  });
+
+  // Close modal when clicking outside the modal-content
+  modal.addEventListener("click", function(e) {
+    if (e.target === modal) {
+      modal.classList.add("hidden");
+    }
   });
 });
