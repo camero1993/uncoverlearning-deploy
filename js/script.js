@@ -1,27 +1,32 @@
 document.addEventListener("DOMContentLoaded", function() {
-  // Elements
-  const revealBtn = document.getElementById("reveal-btn");
-  const heroSection = document.getElementById("hero");
-  const gridSection = document.getElementById("grid");
-  const cards = document.querySelectorAll(".flashcard");
+  const flipBtn = document.getElementById("flip-btn");
+  const hero = document.getElementById("hero");
+  const grid = document.getElementById("grid");
+  const flashcards = document.querySelectorAll(".flashcard");
 
-  // Show grid view when hero CTA is clicked
-  revealBtn.addEventListener("click", function() {
-    heroSection.classList.add("hidden");
-    gridSection.classList.remove("hidden");
+  // When the flip button is clicked on the hero card, flip the hero to reveal grid
+  flipBtn.addEventListener("click", function() {
+    hero.classList.add("flipped");
+    // Wait for the flip animation (0.8s) then hide hero and show grid
+    setTimeout(() => {
+      hero.classList.add("hidden");
+      grid.classList.remove("hidden");
+    }, 800);
   });
 
-  // Add click handlers for flashcards
-  cards.forEach(card => {
+  // Add click behavior to each flashcard in the grid
+  flashcards.forEach(card => {
     card.addEventListener("click", function() {
-      // If this is the middle (back) card, return to hero view
+      // If the clicked card is the center (back) card, return to hero view
       if (card.classList.contains("back-card")) {
-        gridSection.classList.add("hidden");
-        heroSection.classList.remove("hidden");
-        // Reset any flipped state on all cards
-        cards.forEach(c => c.classList.remove("flipped"));
+        grid.classList.add("hidden");
+        hero.classList.remove("hidden");
+        // Reverse the flip animation (remove flipped after a short delay)
+        setTimeout(() => {
+          hero.classList.remove("flipped");
+        }, 50);
       } else {
-        // Toggle flip animation to show content
+        // Otherwise, toggle the flip on the card
         card.classList.toggle("flipped");
       }
     });
