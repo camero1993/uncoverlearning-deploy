@@ -109,7 +109,7 @@ body {
 }
 
 /* -------------------------------------
-   ZOOMED STATE
+   ZOOMED STATE (no extra flip)
    ------------------------------------- */
 .flashcard.zoomed {
   position: absolute;
@@ -120,11 +120,19 @@ body {
   max-width: none;
   z-index: 20;
 }
-.flashcard.zoomed .card-inner {
+.flashcard.zoomed .card-front {
+  display: none; /* hide front layout */
+}
+.flashcard.zoomed .card-back {
+  transform: none; /* ensure back is visible */
   width: 100%;
   height: 100%;
-  transform: none;
-  backface-visibility: hidden;
+  padding: 2rem;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+.flashcard.zoomed .front-btn {
+  display: none; /* remove 'see how' */
 }
 
 /* -------------------------------------
