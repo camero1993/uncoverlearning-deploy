@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 800);
   });
 
-  // Flashcard click logic
   cards.forEach(card => {
     const frontBtn = card.querySelector('.front-btn');
     const backBtn  = card.querySelector('.back-btn');
@@ -26,15 +25,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Front → Back flip
+    // Front → Flip back panel then zoom
     frontBtn && frontBtn.addEventListener('click', e => {
       e.stopPropagation();
       card.classList.add('flipped');
+      setTimeout(() => {
+        card.classList.add('zoomed');
+      }, 600); // wait for flip
     });
 
-    // Back → Front flip
+    // Back-arrow → unzoom and flip back to front
     backBtn && backBtn.addEventListener('click', e => {
       e.stopPropagation();
+      card.classList.remove('zoomed');
       card.classList.remove('flipped');
     });
   });
