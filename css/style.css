@@ -180,6 +180,10 @@ body {
   align-items: center;
   justify-content: center;
 }
+.back-card .card-front img {
+  max-width: 60%;
+  max-height: 60%;
+}
 
 /* -------------------------------------
    CONTACT FORM
