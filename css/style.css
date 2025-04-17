@@ -1,131 +1,241 @@
-/* Global */
-* { margin:0; padding:0; box-sizing:border-box; }
+/* -------------------------------------
+   GLOBAL STYLES
+   ------------------------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 body {
+  background: #5c6a5a;         /* page bg */
   font-family: 'Montserrat', sans-serif;
-  background: #5b6959;
-  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  perspective: 1200px;
 }
 
-/* HERO */
+/* -------------------------------------
+   HERO CARD & GRID WRAPPER (shared)
+   ------------------------------------- */
 .hero-card {
-  perspective:1200px;
-  display:flex; align-items:center; justify-content:center;
-  min-height:100vh; background:#ffffff;
+  width: 100%;
+  max-width: 1200px;
+  height: 80vh;
+  background: #ffffff;        
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  padding: 4rem 3rem;
+  text-align: center;
+  transform-style: preserve-3d;
   transition: transform 0.8s ease-in-out;
-  box-shadow:0 6px 12px rgba(0,0,0,0.2);
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-.hero-card.flipped { transform:rotateY(180deg); }
-.hero-card.hidden { display:none; }
+.hero-card.hidden {
+  display: none;
+}
+.hero-card.flipped {
+  transform: rotateY(180deg);
+}
 
-.hero-card .logo { max-width:200px; }
+/* Hero wrapper */
+#hero-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Grid wrapper inherits hero-card */
+#grid-wrapper {
+  display: none;               /* shown via JS */
+}
+#grid-wrapper.visible {
+  display: block;
+}
+
+/* -------------------------------------
+   HERO CONTENT
+   ------------------------------------- */
+.logo {
+  max-width: 400px;
+  margin-bottom: 2rem;
+}
 .mission {
-  font-family:'Recoleta', serif; font-weight:600;
-  color:#5c6a5a; margin:1rem 0;
-  text-transform:lowercase; font-size:2rem;
+  font-family: 'Recoleta', serif;
+  font-weight: 600;
+  color: #5c6a5a;
+  text-transform: lowercase;
+  margin: 1.5rem 0;
+  font-size: 4rem;
 }
 .subtext {
-  font-family:'Recoleta'; font-weight:400;
-  color:#000000; margin-bottom:1rem;
-  text-transform:lowercase; font-size:1.2rem;
+  font-family: 'Recoleta';
+  font-weight: 400;
+  color: #000000;
+  text-transform: lowercase;
+  font-size: 2rem;
+  margin-bottom: 2rem;
 }
 .cta-text {
-  font-family:'Recoleta'; font-weight:300;
-  color:#000000; margin-bottom:1rem;
-  text-transform:lowercase; font-size:1rem;
+  font-family: 'Recoleta';
+  font-weight: 300;
+  color: #000000;
+  text-transform: lowercase;
+  font-size: 1.5rem;
+  margin-bottom: 3rem;
 }
 .hero-btn {
-  font-family:'Recoleta'; font-weight:400;
-  background:#f4f2ed; color:#000000;
-  border:none; padding:0.75rem 1.5rem;
-  border-radius:5px; cursor:pointer;
+  font-family: 'Recoleta';
+  font-weight: 400;
+  background: #f4f2ed;
+  color: #000000;
+  border: none;
+  padding: 2rem 4rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.5rem;
+  align-self: center;
 }
 
-/* GRID */
-.hidden.grid-bg { background:#ffffff; min-height:100vh; }
-#grid.hidden { display:none; }
+/* -------------------------------------
+   GRID LAYOUT & CARDS
+   ------------------------------------- */
 .grid-container {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:1rem; padding:2rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  height: 100%;
+  overflow-y: auto;
 }
 
-/* FLASHCARDS */
+/* FLASHCARD BASE STYLES */
 .flashcard {
-  perspective:800px; cursor:pointer;
+  perspective: 800px;
+  cursor: pointer;
 }
 .card-inner {
-  position:relative; width:100%; height:250px;
-  transition:transform 0.6s ease-in-out;
-  transform-style:preserve-3d;
-  border-radius:6px;
-  box-shadow:0 6px 12px rgba(0,0,0,0.2);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s ease-in-out;
+  transform-style: preserve-3d;
+  border-radius: 6px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
-.flashcard.flipped .card-inner { transform:rotateY(180deg); }
+.flashcard.flipped .card-inner {
+  transform: rotateY(180deg);
+}
 
-.card-front, .card-back {
-  position:absolute; width:100%; height:100%;
-  backface-visibility:hidden; border-radius:6px;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  padding:1rem; text-align:center;
+/* FRONT & BACK PANELS */
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  text-align: center;
 }
 .card-front {
-  background:#f4f2ed;
-  color:#5c6a5a;
-  text-transform:lowercase;
+  background: #f4f2ed;
+  color: #5c6a5a;
 }
 .card-front h3 {
-  font-family:'Recoleta'; font-weight:600; margin-bottom:0.5rem;
-  font-size:1.2rem;
+  font-family: 'Recoleta', serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
 }
 .front-header {
-  font-size:1rem; margin-bottom:1rem;
-  font-family:'Recoleta'; font-weight:400;
+  font-family: 'Recoleta';
+  font-weight: 400;
+  font-size: 1rem;
+  margin-bottom: 1rem;
 }
 .front-btn {
-  font-family:'Recoleta'; font-weight:400;
-  background:#5c6a5a; color:#ffffff;
-  border:none; padding:0.5rem 1rem;
-  border-radius:4px; cursor:pointer;
+  font-family: 'Recoleta';
+  font-weight: 400;
+  background: #5c6a5a;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
 }
-
 .card-back {
-  background:#f4f2ed; color:#000000;
-  transform:rotateY(180deg);
-  overflow:auto; position:relative;
+  background: #f4f2ed;
+  color: #000000;
+  transform: rotateY(180deg);
+  position: relative;
+  overflow-y: auto;
 }
 .back-btn {
-  position:absolute; bottom:8px; left:8px;
-  background:none; border:none;
-  font-size:1rem; color:#5c6a5a; cursor:pointer;
-}
-.email-text {
-  color:#000000; font-family:'Montserrat'; font-weight:300;
-  margin-top:1rem;
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #5c6a5a;
+  cursor: pointer;
 }
 
-/* SPECIAL CENTER CARD */
-.back-card .card-inner { background:#f4f2ed; }
-.back-card .card-front { display:flex; align-items:center; justify-content:center; }
+/* CENTER LOGO CARD */
+.back-card .card-inner {
+  background: #f4f2ed;
+}
+.back-card .card-front {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 /* CONTACT FORM */
 #contact-form {
-  display:flex; flex-direction:column; align-items:center;
-  gap:0.5rem; margin-top:1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 #contact-form input {
-  border:1px solid #000000; padding:0.5rem; border-radius:4px;
+  border: 1px solid #000000;
+  padding: 0.5rem;
+  border-radius: 4px;
 }
 #contact-form button {
-  background:#5c6a5a; color:#ffffff;
-  border:none; padding:0.5rem 1rem;
-  border-radius:4px; cursor:pointer;
+  background: #5c6a5a;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.email-text {
+  color: #000000;
+  font-family: 'Montserrat';
+  font-weight: 300;
+  margin-top: 1rem;
 }
 
 /* RESPONSIVE */
-@media(max-width:768px) {
-  .grid-container { grid-template-columns:repeat(2,1fr); }
+@media (max-width: 768px) {
+  .grid-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
-@media(max-width:480px) {
-  .grid-container { grid-template-columns:1fr; }
+@media (max-width: 480px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+  }
 }
