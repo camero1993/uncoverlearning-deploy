@@ -1,34 +1,58 @@
-document.addEventListener("DOMContentLoaded", function() {
-  const flipBtn = document.getElementById("flip-btn");
-  const hero = document.getElementById("hero");
-  const grid = document.getElementById("grid");
-  const flashcards = document.querySelectorAll(".flashcard");
+document.addEventListener('DOMContentLoaded', () => {
+  const hero = document.getElementById('hero');
+  const heroBtn = document.getElementById('hero-btn');
+  const grid = document.getElementById('grid');
+  const cards = document.querySelectorAll('.flashcard');
 
-  // When the flip button is clicked on the hero card, flip the hero to reveal grid
-  flipBtn.addEventListener("click", function() {
-    hero.classList.add("flipped");
-    // Wait for the flip animation (0.8s) then hide hero and show grid
+  // Hero flip → show grid
+  heroBtn.addEventListener('click', () => {
+    hero.classList.add('flipped');
     setTimeout(() => {
-      hero.classList.add("hidden");
-      grid.classList.remove("hidden");
+      hero.classList.add('hidden');
+      grid.classList.remove('hidden');
     }, 800);
   });
 
-  // Add click behavior to each flashcard in the grid
-  flashcards.forEach(card => {
-    card.addEventListener("click", function() {
-      // If the clicked card is the center (back) card, return to hero view
-      if (card.classList.contains("back-card")) {
-        grid.classList.add("hidden");
-        hero.classList.remove("hidden");
-        // Reverse the flip animation (remove flipped after a short delay)
-        setTimeout(() => {
-          hero.classList.remove("flipped");
-        }, 50);
-      } else {
-        // Otherwise, toggle the flip on the card
-        card.classList.toggle("flipped");
-      }
-    });
+  // Card click behaviors
+  cards.forEach(card => {
+    const inner = card.querySelector('.card-inner');
+    const frontBtn = card.querySelector('.front-btn');
+    const backBtn = card.querySelector('.back-btn');
+
+    // Zoom in on front-face click area (excluding center card)
+    if (!card.classList.contains('back-card')) {
+      card.addEventListener('click', e => {
+        if (e.target === frontBtn) return;
+        // zoom: make this card full screen
+        cards.forEach(c => c.classList.add('hidden'));
+        card.classList.remove('hidden');
+        card.classList.add('zoomed');
+      });
+    }
+
+    // Front→Back flip
+    if (frontBtn) {
+      frontBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        card.classList.add('flipped');
+      });
+    }
+
+    // Back→Front flip
+    if (backBtn) {
+      backBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        card.classList.remove('flipped');
+      });
+    }
+
+    // Center card returns to hero
+    if (card.classList.contains('back-card')) {
+      card.addEventListener('click', () => {
+        grid.classList.add('hidden');
+        hero.classList.remove('hidden');
+        setTimeout(() => hero.classList.remove('flipped'), 50);
+      });
+    }
   });
 });
