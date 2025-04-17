@@ -6,8 +6,10 @@
   padding: 0;
   box-sizing: border-box;
 }
+
 body {
-  background: #5c6a5a;         /* page bg */
+  position: relative;            /* new: for absolute positioning of grid-wrapper */
+  background: #5c6a5a;           /* page background */
   font-family: 'Montserrat', sans-serif;
   display: flex;
   align-items: center;
@@ -23,7 +25,7 @@ body {
   width: 100%;
   max-width: 1200px;
   height: 80vh;
-  background: #ffffff;        
+  background: #ffffff;
   border-radius: 8px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   padding: 4rem 3rem;
@@ -35,14 +37,18 @@ body {
   flex-direction: column;
   justify-content: center;
 }
+
 .hero-card.hidden {
   display: none;
 }
+
 .hero-card.flipped {
   transform: rotateY(180deg);
 }
 
-/* Hero wrapper */
+/* -------------------------------------
+   HERO WRAPPER
+   ------------------------------------- */
 #hero-wrapper {
   width: 100%;
   display: flex;
@@ -50,10 +56,27 @@ body {
   justify-content: center;
 }
 
-/* Grid wrapper inherits hero-card */
+/* -------------------------------------
+   GRID WRAPPER
+   ------------------------------------- */
 #grid-wrapper {
-  display: none;               /* shown via JS */
+  display: none;                /* hidden by default */
+  position: absolute;           /* absolute overlay */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 80vh;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 10;                  /* on top of hero */
 }
+
 #grid-wrapper.visible {
   display: block;
 }
@@ -65,6 +88,7 @@ body {
   max-width: 400px;
   margin-bottom: 2rem;
 }
+
 .mission {
   font-family: 'Recoleta', serif;
   font-weight: 600;
@@ -73,6 +97,7 @@ body {
   margin: 1.5rem 0;
   font-size: 4rem;
 }
+
 .subtext {
   font-family: 'Recoleta';
   font-weight: 400;
@@ -81,6 +106,7 @@ body {
   font-size: 2rem;
   margin-bottom: 2rem;
 }
+
 .cta-text {
   font-family: 'Recoleta';
   font-weight: 300;
@@ -89,6 +115,7 @@ body {
   font-size: 1.5rem;
   margin-bottom: 3rem;
 }
+
 .hero-btn {
   font-family: 'Recoleta';
   font-weight: 400;
@@ -118,6 +145,7 @@ body {
   perspective: 800px;
   cursor: pointer;
 }
+
 .card-inner {
   position: relative;
   width: 100%;
@@ -127,6 +155,7 @@ body {
   border-radius: 6px;
   box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
+
 .flashcard.flipped .card-inner {
   transform: rotateY(180deg);
 }
@@ -138,104 +167,4 @@ body {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-  text-align: center;
-}
-.card-front {
-  background: #f4f2ed;
-  color: #5c6a5a;
-}
-.card-front h3 {
-  font-family: 'Recoleta', serif;
-  font-weight: 600;
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-}
-.front-header {
-  font-family: 'Recoleta';
-  font-weight: 400;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-.front-btn {
-  font-family: 'Recoleta';
-  font-weight: 400;
-  background: #5c6a5a;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.card-back {
-  background: #f4f2ed;
-  color: #000000;
-  transform: rotateY(180deg);
-  position: relative;
-  overflow-y: auto;
-}
-.back-btn {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  color: #5c6a5a;
-  cursor: pointer;
-}
-
-/* CENTER LOGO CARD */
-.back-card .card-inner {
-  background: #f4f2ed;
-}
-.back-card .card-front {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* CONTACT FORM */
-#contact-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-#contact-form input {
-  border: 1px solid #000000;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-#contact-form button {
-  background: #5c6a5a;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.email-text {
-  color: #000000;
-  font-family: 'Montserrat';
-  font-weight: 300;
-  margin-top: 1rem;
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  .grid-container {
-    grid-template-columns: 1fr;
-  }
-}
+  border
