@@ -10,6 +10,7 @@
 </head>
 <body>
   <div class="scroll-container">
+  
     <!-- 1) Logo Card -->
     <div class="flashcard" id="logo-card">
       <div class="card-inner">
@@ -35,8 +36,25 @@
         <div class="card-back">
           <button class="back-btn">&larr;</button>
           <h3>the problem</h3>
-          <p class="back-header">college textbooks are over‑priced and ineffective</p>
-          <!-- Additional back content here -->
+          <p class="back-header">Textbook publishers serve professors, not students. Professors are ultimately the market decision makers, as they select the materials that students are required to pay for to "succeed" in their classes. They often make these selections without price or quality in mind. This leads to expensive textbooks that fail to adequately support student studying.</p>
+          <div class="stats-container">
+            <div class="stats-row">
+              <span class="stat-number">$345</span>
+              <span class="stat-text">average cost: textbooks – semester (student survey)</span>
+            </div>
+            <div class="stats-row">
+              <span class="stat-number">$126</span>
+              <span class="stat-text">average cost: digital course subscription (New York Times, 2016)</span>
+            </div>
+            <div class="stats-row">
+              <span class="stat-number">65%</span>
+              <span class="stat-text">percentage of students who avoided purchasing required books because of price (U.S PIRG, 2020)</span>
+            </div>
+            <div class="stats-row">
+              <span class="stat-number">56%</span>
+              <span class="stat-text">percentage of local students reported not studying with purchased books</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -52,8 +70,7 @@
         <div class="card-back">
           <button class="back-btn">&larr;</button>
           <h3>our solution</h3>
-          <p class="back-header">a course‑based education platform curated by educators, personalized and accessible for students</p>
-          <!-- Additional back content here -->
+          <p class="back-header">A course-based education platform that accessibly improves student outcomes with AI-powered teaching content and personalized student tutoring. Our AI models are solely based on professor selected open source materials, and are fine-tuned to guide, not enable cheating.</p>
         </div>
       </div>
     </div>
@@ -69,8 +86,13 @@
         <div class="card-back">
           <button class="back-btn">&larr;</button>
           <h3>our mission</h3>
-          <p class="back-header">make growth‑generating learning accessible to all</p>
-          <!-- Additional back content here -->
+          <p class="back-header">To make growth‑generating, personalized learning accessible to all</p>
+          <ul class="mission-list">
+            <li>Incentivizing college professors to use free and open learning materials as course books provided by Uncover Learning through learning‑optimizing generative models</li>
+            <li>Empowering educators and academics to create more open‑source learning materials, which can be uploaded to and leveraged by Uncover Learning's models for immediate student use</li>
+            <li>Bridging gaps between generations of college students by incentivizing the sharing of student‑created study guides and notes through the Uncover Learning application</li>
+            <li>Leveraging uploaded materials over time to build the most affordable and effective online learning platform in the world, offering low cost education globally</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -87,31 +109,58 @@
           <button class="back-btn">&larr;</button>
           <h3>our team</h3>
           <p class="back-header">meet the talented team making uncover learning possible</p>
-          <!-- Additional back content here -->
+          <div class="team-container">
+            <div class="team-member">
+              <img src="assets/taj.jpg" alt="Taj O’Malley">
+              <div class="team-info">
+                <h4>Taj O’Malley</h4>
+                <p>Principal Co-Founder</p>
+                <a href="https://www.linkedin.com/in/taj-o-malley-94776a239/" target="_blank">
+                  <img src="assets/linkedin-icon.png" alt="LinkedIn" class="linkedin-icon">
+                </a>
+              </div>
+            </div>
+            <div class="team-member">
+              <img src="assets/henry.jpg" alt="Henry Dicks">
+              <div class="team-info">
+                <h4>Henry Dicks</h4>
+                <p>Operational Co-Founder</p>
+                <a href="https://www.linkedin.com/in/henry-dicks/" target="_blank">
+                  <img src="assets/linkedin-icon.png" alt="LinkedIn" class="linkedin-icon">
+                </a>
+              </div>
+            </div>
+            <div class="team-member">
+              <img src="assets/magnus.jpg" alt="Magnus Graham">
+              <div class="team-info">
+                <h4>Magnus Graham</h4>
+                <p>Technical Co-Founder</p>
+                <a href="https://www.linkedin.com/in/magnus-graham/" target="_blank">
+                  <img src="assets/linkedin-icon.png" alt="LinkedIn" class="linkedin-icon">
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 6) Contact -->
-    <div class="flashcard" data-card="contact">
+    <!-- 6) Contact (no flip) -->
+    <div class="flashcard">
       <div class="card-inner">
         <div class="card-front">
           <h3>contact</h3>
           <p class="front-header">stay connected: all voices are key to our movement</p>
-          <button class="front-btn">sign‑up</button>
-        </div>
-        <div class="card-back">
-          <button class="back-btn">&larr;</button>
-          <h3>contact</h3>
-          <p class="back-header">stay connected: all voices are key to our movement</p>
-          <form id="contact-form">
+          <div class="contact-form-container">
             <input type="email" placeholder="emailaddress@email.com" required>
-            <button type="submit">sign‑up</button>
-          </form>
+            <button class="connect-btn">connect</button>
+          </div>
+          <p class="contact-text">email us directly: uncoverlearning@outlook.com</p>
         </div>
       </div>
     </div>
-  </div>
+
+  </div><!-- .scroll-container -->
 
   <script src="js/script.js"></script>
 </body>
