@@ -7,7 +7,6 @@
   box-sizing: border-box;
 }
 body {
-  position: relative;
   margin: 0;
   background: #5c6a5a; /* Page background */
   font-family: 'Montserrat', sans-serif;
@@ -32,7 +31,7 @@ body {
   padding: 2rem 1rem;
 }
 #intro .logo {
-  max-width: 300px;
+  max-width: 500px; /* Increased logo size */
   margin-bottom: 2rem;
 }
 #intro .mission {
@@ -77,40 +76,7 @@ body {
 }
 
 /* -------------------------------------
-   ZOOMED STATE
-   ------------------------------------- */
-.flashcard.zoomed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 20;
-}
-.flashcard.zoomed .card-inner {
-  transform: none;
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-}
-.flashcard.zoomed .card-front {
-  display: none;
-}
-.flashcard.zoomed .card-back {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  padding: 2rem;
-  overflow-y: auto;
-  justify-content: flex-start;
-  align-items: flex-start;
-}
-
-/* -------------------------------------
-   FRONT & BACK PANELS
+   FLASHCARD PANELS
    ------------------------------------- */
 .card-front,
 .card-back {
@@ -174,7 +140,56 @@ body {
 }
 
 /* -------------------------------------
-   CENTER LOGO CARD
+   ZOOMED STATE
+   ------------------------------------- */
+.flashcard.zoomed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 20;
+  background: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4rem;
+}
+.flashcard.zoomed .card-inner {
+  transform: none;
+  width: 90%;
+  height: auto;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+.flashcard.zoomed .card-front {
+  display: none;
+}
+.flashcard.zoomed .card-back {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center title/header horizontally */
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+.flashcard.zoomed h3 {
+  margin-top: 1rem;
+  font-size: 2rem;
+  text-align: center;
+}
+.flashcard.zoomed .front-header {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* -------------------------------------
+   CENTER LOGO CARD (intro scroll)
    ------------------------------------- */
 .back-card .card-inner {
   background: #f4f2ed;
