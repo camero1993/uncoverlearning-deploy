@@ -1,263 +1,44 @@
-/* -------------------------------------
-   GLOBAL STYLES
-   ------------------------------------- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-body {
-  position: relative;
-  margin: 0;
-  background: #5c6a5a; /* Page background */
-  font-family: 'Montserrat', sans-serif;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  perspective: 1200px; /* quizlet-style perspective */
-}
+document.addEventListener('DOMContentLoaded', () => {
+  const hero       = document.getElementById('hero');
+  const heroBtn    = document.getElementById('hero-btn');
+  const gridWrap   = document.getElementById('grid-wrapper');
+  const cards      = document.querySelectorAll('.flashcard');
 
-/* -------------------------------------
-   HERO & GRID WRAPPER (shared)
-   ------------------------------------- */
-.hero-card {
-  width: 95%;
-  max-width: none;
-  height: 95vh;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-  padding: 4rem 3rem;
-  text-align: center;
-  transform-style: preserve-3d;
-  transition: transform 0.6s ease-in-out; /* quizlet-style timing */
-  backface-visibility: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.hero-card.hidden {
-  display: none;
-}
-.hero-card.flipped {
-  transform: rotateY(180deg);
-}
+  // Hero flip → reveal grid
+  heroBtn.addEventListener('click', () => {
+    hero.classList.add('flipped');
+    setTimeout(() => {
+      gridWrap.classList.add('visible');
+    }, 800);
+  });
 
-#hero-wrapper {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+  cards.forEach(card => {
+    const frontBtn = card.querySelector('.front-btn');
+    const backBtn  = card.querySelector('.back-btn');
 
-/* -------------------------------------
-   GRID WRAPPER (Exact overlay)
-   ------------------------------------- */
-#grid-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: none;
-  width: 95%;
-  height: 95vh;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-  padding: 2rem;
-  box-sizing: border-box;
-  overflow: hidden;
-  z-index: 10;
-  transform-style: preserve-3d;
-}
-#grid-wrapper.visible {
-  display: block;
-}
+    // Center card returns to hero
+    if (card.classList.contains('back-card')) {
+      card.addEventListener('click', () => {
+        gridWrap.classList.remove('visible');
+        hero.classList.remove('flipped');
+      });
+      return;
+    }
 
-/* -------------------------------------
-   GRID CONTAINER
-   ------------------------------------- */
-.grid-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  height: 100%;
-  overflow-y: auto;
-}
+    // Front → Flip back panel then zoom
+    frontBtn && frontBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      card.classList.add('flipped');
+      setTimeout(() => {
+        card.classList.add('zoomed');
+      }, 600); // wait for flip
+    });
 
-/* -------------------------------------
-   FLASHCARD BASE STYLES
-   ------------------------------------- */
-.flashcard {
-  perspective: 800px;
-  cursor: pointer;
-  position: relative;
-}
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.6s ease-in-out; /* consistent flip timing */
-  transform-style: preserve-3d;
-  border-radius: 6px;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-}
-.flashcard.flipped .card-inner {
-  transform: rotateY(180deg);
-}
-
-/* -------------------------------------
-   ZOOMED STATE (no extra flip on cards)
-   ------------------------------------- */
-.flashcard.zoomed {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  z-index: 20;
-}
-.flashcard.zoomed .card-inner {
-  transform: none;
-  backface-visibility: hidden;
-}
-.flashcard.zoomed .card-front {
-  display: none;
-}
-.flashcard.zoomed .card-back {
-  transform: none;
-  width: 100%;
-  height: 100%;
-  padding: 2rem;
-  justify-content: flex-start;
-  align-items: flex-start;
-}
-.flashcard.zoomed .front-btn {
-  display: none;
-}
-
-/* -------------------------------------
-   FRONT & BACK PANELS
-   ------------------------------------- */
-.card-front,
-.card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-  text-align: center;
-}
-.card-front {
-  background: #f4f2ed;
-  color: #5c6a5a;
-}
-.card-front h3 {
-  font-family: 'Recoleta', serif;
-  font-weight: 600;
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-}
-.front-header {
-  font-family: 'Recoleta';
-  font-weight: 400;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-.front-btn {
-  font-family: 'Recoleta';
-  font-weight: 400;
-  background: #5c6a5a;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.card-back {
-  background: #f4f2ed;
-  color: #000000;
-  transform: rotateY(180deg);
-  position: relative;
-  overflow-y: auto;
-}
-.back-btn {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #5c6a5a;
-  cursor: pointer;
-}
-.back-btn::before {
-  content: '\2190';
-}
-
-/* -------------------------------------
-   CENTER LOGO CARD
-   ------------------------------------- */
-.back-card .card-inner {
-  background: #f4f2ed;
-}
-.back-card .card-front {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.back-card .card-front img {
-  max-width: 60%;
-  max-height: 60%;
-}
-
-/* -------------------------------------
-   CONTACT FORM
-   ------------------------------------- */
-#contact-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-#contact-form input {
-  border: 1px solid #000000;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-#contact-form button {
-  background: #5c6a5a;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.email-text {
-  color: #000000;
-  font-family: 'Montserrat';
-  font-weight: 300;
-  margin-top: 1rem;
-}
-
-/* -------------------------------------
-   RESPONSIVE
-   ------------------------------------- */
-@media (max-width: 768px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  .grid-container {
-    grid-template-columns: 1fr;
-  }
-}
+    // Back-arrow → unzoom and flip back to front
+    backBtn && backBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      card.classList.remove('zoomed');
+      card.classList.remove('flipped');
+    });
+  });
+});
