@@ -247,3 +247,32 @@ body {
 .scroll-container::-webkit-scrollbar {
   display: none;
 }
+/* ---------------------------------------
+   LOGO CARD: FULL‑SCREEN EXPANSION ON FLIP
+   --------------------------------------- */
+
+/* When the logo card gains .flipped, pull it out of the scroll flow */
+#logo-card.flipped {
+  position: fixed;      /* sit on top of everything */
+  top: 0;
+  left: 0;
+  width: 100vw;         /* fill viewport width */
+  height: 100vh;        /* fill viewport height */
+  margin: 0;            /* override any card margins */
+  flex: none;           /* don’t shrink or grow in the flex container */
+  scroll-snap-align: none;
+  z-index: 1000;        /* above the scroll container */
+  overflow: hidden;
+}
+
+/* Make its inner flipped face also fill completely */
+#logo-card.flipped .card-inner {
+  width: 100%;
+  height: 100%;
+}
+
+/* Ensure back face content is still top‑aligned under the back‑btn */
+#logo-card.flipped .card-back {
+  justify-content: flex-start;
+  padding-top: 2rem;
+}
