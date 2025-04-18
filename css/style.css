@@ -1,55 +1,73 @@
-/*----------------------
+/*----------------------------
   GLOBAL & SCROLL LAYOUT
------------------------*/
+-----------------------------*/
 * {
-  margin: 0; padding: 0; box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
+
 body {
   background: #ffffff;
   overflow-x: hidden;
   font-family: 'Montserrat', sans-serif;
 }
+
 .scroll-container {
   display: flex;
+  align-items: center;                 /* center cards vertically */
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  align-items: center;              /* center cards vertically */
   height: 100vh;
-}
-.flashcard {
-  flex: 0 0 70vw;                   /* show part of next/prev */
-  height: 80vh;
-  margin: 5vh 10vw;                 /* vertical & horizontal spacing */
-  scroll-snap-align: center;
-  perspective: 1000px;
+  padding: 0 12vw;                      /* show peek of prev/next card */
 }
 
-/*-------------------
-  CARD INNER & PANELS
---------------------*/
+/*------------------------------
+  FLASHCARD SIZING & POSITIONING
+-------------------------------*/
+.flashcard {
+  flex: 0 0 70vw;                       /* cards take 70% of viewport width */
+  height: 80vh;                         /* 80% of viewport height */
+  margin: 0 3vw;                        /* horizontal gap between cards */
+  scroll-snap-align: center;
+  perspective: 1000px;
+  position: relative;
+}
+
+/*------------------------------
+  CARD INNER & PANELS (shared)
+-------------------------------*/
 .card-inner {
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
   transition: transform 0.6s ease-in-out;
 }
+
 .card-front,
 .card-back {
-  position: absolute; width: 100%; height: 100%;
+  position: absolute;
+  width: 100%;
+  height: 100%;
   backface-visibility: hidden;
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   background: #ffffff;
-  display: flex; flex-direction: column;
-  align-items: center; text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 1rem;
+  text-align: center;
   overflow: hidden;
 }
-/* X‑axis flip */
+
 .flashcard.flipped .card-inner {
-  transform: rotateX(180deg);
+  transform: rotateX(180deg);           /* X‑axis flip */
 }
-/* Back sits upside down initially */
+
+/* The back face must start rotated */
 .card-back {
   transform: rotateX(180deg);
 }
@@ -57,12 +75,13 @@ body {
 /*----------------
   FRONT CONTENT
 -----------------*/
-/* Logo larger */
+/* Logo: now 90% of card width */
 .logo {
-  max-width: 80%;
+  max-width: 90%;
   margin-bottom: 2rem;
 }
-/* Mission uses Fraunces 600 */
+
+/* Mission & CTA: unchanged sizes */
 .mission {
   font-family: 'Fraunces', serif;
   font-weight: 600;
@@ -71,7 +90,7 @@ body {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
 }
-/* CTA text Montserrat 400 */
+
 .cta-text {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
@@ -80,19 +99,22 @@ body {
   cursor: pointer;
   transition: transform 0.2s, opacity 0.2s;
 }
+
 .cta-text:hover {
   transform: translateY(-4px);
   opacity: 0.8;
 }
-/* Card titles: Fraunces 600, very large */
+
+/* Card Titles: WAY bigger at 4rem */
 .card-front h3,
 .card-back h3 {
   font-family: 'Fraunces', serif;
   font-weight: 600;
-  font-size: 3rem;
+  font-size: 4rem;
   margin: 1rem 0 0.5rem;
 }
-/* Headers/copy: Montserrat 400 */
+
+/* Headers/Copy: still Montserrat 400 at 1.5rem */
 .front-header,
 .back-header {
   font-family: 'Montserrat', sans-serif;
@@ -100,7 +122,8 @@ body {
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
 }
-/* Front buttons */
+
+/* Buttons: unchanged */
 .front-btn {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
@@ -117,13 +140,16 @@ body {
 ----------------*/
 .back-btn {
   position: absolute;
-  top: 1rem; left: 1rem;
-  background: none; border: none;
-  font-size: 2rem; color: #5c6a5a;
+  top: 1rem;
+  left: 1rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #5c6a5a;
   cursor: pointer;
 }
 
-/* Hide scrollbar */
+/* Hide the scrollbar for a cleaner look */
 .scroll-container::-webkit-scrollbar {
   display: none;
 }
