@@ -1,249 +1,117 @@
-/* -------------------------------------
-   GLOBAL STYLES
-   ------------------------------------- */
+/* GLOBAL & SCROLL CONTAINER */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  margin: 0; padding: 0; box-sizing: border-box;
 }
 body {
-  margin: 0;
-  background: #5c6a5a; /* Page background */
+  background: #ffffff;
+  overflow-x: hidden;
   font-family: 'Montserrat', sans-serif;
+}
+.scroll-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 100vh;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  height: 100vh;
+}
+/* flashcards snap to center */
+.flashcard {
+  flex: 0 0 90vw;
+  height: 90vh;
+  margin: auto 5vw;
+  scroll-snap-align: center;
+  perspective: 1000px;
+  position: relative;
 }
 
-/* -------------------------------------
-   INTRO SECTION
-   ------------------------------------- */
-#intro {
+/* CARD INNER & PANELS */
+.card-inner {
   width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease-in-out;
+}
+.card-front,
+.card-back {
+  position: absolute; width: 100%; height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   background: #ffffff;
-  min-height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 1rem;
+  text-align: center;
 }
-#intro .logo {
-  max-width: 500px; /* Increased logo size */
+.card-back {
+  transform: rotateX(180deg);
+}
+
+/* FLIP STATES */
+.flashcard.flipped .card-inner {
+  transform: rotateX(180deg);
+}
+
+/* FRONT CONTENT */
+.logo {
+  max-width: 400px;
   margin-bottom: 2rem;
 }
-#intro .mission {
+.mission {
   font-family: 'Recoleta', serif;
   font-weight: 600;
   color: #5c6a5a;
   text-transform: lowercase;
-  font-size: 3rem;
-  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
 }
-
-/* -------------------------------------
-   GRID SECTION
-   ------------------------------------- */
-#grid {
-  width: 100%;
-  max-width: 1200px;
-  padding: 2rem 1rem;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  box-sizing: border-box;
-}
-
-/* -------------------------------------
-   FLASHCARD BASE STYLES
-   ------------------------------------- */
-.flashcard {
-  perspective: 800px;
+.cta-text {
+  font-family: 'Recoleta', serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #000;
   cursor: pointer;
-  position: relative;
-  height: 200px;
+  transition: transform 0.2s, opacity 0.2s;
 }
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.6s ease-in-out;
-  transform-style: preserve-3d;
-  border-radius: 6px;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-}
-
-/* -------------------------------------
-   FLASHCARD PANELS
-   ------------------------------------- */
-.card-front,
-.card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-  text-align: center;
-}
-.card-front {
-  background: #f4f2ed;
-  color: #5c6a5a;
+.cta-text:hover {
+  transform: translateY(-4px);
+  opacity: 0.8;
 }
 .card-front h3 {
   font-family: 'Recoleta', serif;
   font-weight: 600;
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
 }
 .front-header {
-  font-family: 'Recoleta';
+  font-family: 'Recoleta', serif;
   font-weight: 400;
   font-size: 1rem;
   margin-bottom: 1rem;
 }
 .front-btn {
-  font-family: 'Recoleta';
+  font-family: 'Recoleta', serif;
   font-weight: 400;
   background: #5c6a5a;
-  color: #ffffff;
+  color: #fff;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
 }
-.card-back {
-  background: #f4f2ed;
-  color: #000000;
-  transform: rotateY(180deg);
-  position: relative;
-  overflow-y: auto;
-}
+
+/* BACK BUTTON */
 .back-btn {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #5c6a5a;
+  top: 1rem; left: 1rem;
+  background: none; border: none;
+  font-size: 2rem; color: #5c6a5a;
   cursor: pointer;
 }
-.back-btn::before {
-  content: '\2190';
-}
 
-/* -------------------------------------
-   ZOOMED STATE
-   ------------------------------------- */
-.flashcard.zoomed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 20;
-  background: #ffffff;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 4rem;
-}
-.flashcard.zoomed .card-inner {
-  transform: none;
-  width: 90%;
-  height: auto;
-  max-height: 90vh;
-  border-radius: 8px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-}
-.flashcard.zoomed .card-front {
+/* REMOVE OUTER SCROLLBAR ON SOME BROWSERS */
+.scroll-container::-webkit-scrollbar {
   display: none;
-}
-.flashcard.zoomed .card-back {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* center title/header horizontally */
-  justify-content: flex-start;
-  width: 100%;
-  height: 100%;
-  padding: 2rem;
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-.flashcard.zoomed h3 {
-  margin-top: 1rem;
-  font-size: 2rem;
-  text-align: center;
-}
-.flashcard.zoomed .front-header {
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-}
-
-/* -------------------------------------
-   CENTER LOGO CARD (intro scroll)
-   ------------------------------------- */
-.back-card .card-inner {
-  background: #f4f2ed;
-}
-.back-card .card-front {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.back-card .card-front img {
-  max-width: 60%;
-  max-height: 60%;
-}
-
-/* -------------------------------------
-   CONTACT FORM
-   ------------------------------------- */
-#contact-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-#contact-form input {
-  border: 1px solid #000000;
-  padding: 0.5rem;
-  border-radius: 4px;
-}
-#contact-form button {
-  background: #5c6a5a;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.email-text {
-  color: #000000;
-  font-family: 'Montserrat';
-  font-weight: 300;
-  margin-top: 1rem;
-}
-
-/* -------------------------------------
-   RESPONSIVE
-   ------------------------------------- */
-@media (max-width: 768px) {
-  #grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  #grid {
-    grid-template-columns: 1fr;
-  }
 }
