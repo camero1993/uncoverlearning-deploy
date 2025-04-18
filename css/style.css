@@ -1,36 +1,33 @@
-/* -------------------------------------
-   FONT IMPORTS
-   ------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Montserrat:wght@400&display=swap');
-
-/* GLOBAL & SCROLL CONTAINER */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/*----------------------
+  GLOBAL & SCROLL LAYOUT
+-----------------------*/
+* {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
 body {
   background: #ffffff;
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: 'Montserrat', sans-serif;
 }
 .scroll-container {
   display: flex;
-  align-items: center;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  align-items: center;              /* center cards vertically */
   height: 100vh;
-  padding: 0 15vw; /* shows small peek of neighbors */
 }
-
-/* FLASHCARD & SCROLL SNAP */
 .flashcard {
-  flex: 0 0 70vw;   /* 70% viewport width */
-  height: 80vh;     /* 80% viewport height */
-  margin: 0 5vw;    /* 5% viewport gap */
+  flex: 0 0 70vw;                   /* show part of next/prev */
+  height: 80vh;
+  margin: 5vh 10vw;                 /* vertical & horizontal spacing */
   scroll-snap-align: center;
   perspective: 1000px;
-  position: relative;
 }
 
-/* CARD INNER & PANELS */
+/*-------------------
+  CARD INNER & PANELS
+--------------------*/
 .card-inner {
   width: 100%; height: 100%;
   transform-style: preserve-3d;
@@ -38,31 +35,34 @@ body {
 }
 .card-front,
 .card-back {
-  position: absolute;
-  width: 100%; height: 100%;
+  position: absolute; width: 100%; height: 100%;
   backface-visibility: hidden;
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
   padding: 1rem;
-  text-align: center;
+  overflow: hidden;
 }
-.card-back { transform: rotateX(180deg); }
-
-/* FLIP STATES */
+/* X‑axis flip */
 .flashcard.flipped .card-inner {
   transform: rotateX(180deg);
 }
+/* Back sits upside down initially */
+.card-back {
+  transform: rotateX(180deg);
+}
 
-/* FRONT CONTENT */
+/*----------------
+  FRONT CONTENT
+-----------------*/
+/* Logo larger */
 .logo {
-  max-width: 70%; /* increased logo size */
+  max-width: 80%;
   margin-bottom: 2rem;
 }
+/* Mission uses Fraunces 600 */
 .mission {
   font-family: 'Fraunces', serif;
   font-weight: 600;
@@ -71,11 +71,12 @@ body {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
 }
+/* CTA text Montserrat 400 */
 .cta-text {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
-  font-size: 1rem; /* Montserrat regular */
-  color: #000000;
+  font-size: 1.25rem;
+  color: #000;
   cursor: pointer;
   transition: transform 0.2s, opacity 0.2s;
 }
@@ -83,58 +84,46 @@ body {
   transform: translateY(-4px);
   opacity: 0.8;
 }
-.card-front h3 {
+/* Card titles: Fraunces 600, very large */
+.card-front h3,
+.card-back h3 {
   font-family: 'Fraunces', serif;
   font-weight: 600;
-  font-size: 1.5rem; /* card title */
-  margin-bottom: 1rem;
+  font-size: 3rem;
+  margin: 1rem 0 0.5rem;
 }
-.front-header {
+/* Headers/copy: Montserrat 400 */
+.front-header,
+.back-header {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
-  font-size: 1rem; /* Montserrat regular */
-  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
 }
+/* Front buttons */
 .front-btn {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
   background: #5c6a5a;
-  color: #ffffff;
+  color: #fff;
   border: none;
-  padding: 0.75rem 1.5rem; /* slightly larger button text */
+  padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
 }
 
-/* BACK SIDE HEADER & TITLE VISIBLE */
-.card-back h3,
-.card-back .front-header {
-  transform: none;
-  backface-visibility: visible;
-}
-.card-back h3 {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.5rem;
-  margin-top: 2rem;
-}
-.card-back .front-header {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 400;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-
-/* BACK BUTTON */
+/*---------------
+  BACK BUTTON
+----------------*/
 .back-btn {
   position: absolute;
   top: 1rem; left: 1rem;
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #5c6a5a;
+  background: none; border: none;
+  font-size: 2rem; color: #5c6a5a;
   cursor: pointer;
 }
 
-/* HIDE SCROLLBAR WHERE POSSIBLE */
-.scroll-container::-webkit-scrollbar { display: none; }
+/* Hide scrollbar */
+.scroll-container::-webkit-scrollbar {
+  display: none;
+}
