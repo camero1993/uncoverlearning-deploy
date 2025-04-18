@@ -15,7 +15,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  perspective: 1200px;
+  perspective: 800px; /* stronger perspective for realistic flip */
 }
 
 /* -------------------------------------
@@ -31,7 +31,8 @@ body {
   padding: 4rem 3rem;
   text-align: center;
   transform-style: preserve-3d;
-  transition: transform 1.2s ease-in-out;
+  transition: transform 2s ease-in-out; /* slower, smoother flip */
+  transform-origin: center center; /* flip around vertical center */
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
@@ -49,10 +50,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* maintain perspective for child flip */
 }
 
 /* -------------------------------------
-   GRID WRAPPER (Exact overlay of hero-card)
+   GRID WRAPPER (Exact overlay)
    ------------------------------------- */
 #grid-wrapper {
   position: absolute;
@@ -61,7 +63,6 @@ body {
   transform: translate(-50%, -50%);
   display: none;
   width: 95%;
-  max-width: none;
   height: 95vh;
   background: #ffffff;
   border-radius: 8px;
