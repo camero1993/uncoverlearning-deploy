@@ -1,21 +1,22 @@
 /* GLOBAL & SCROLL CONTAINER */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #ffffff; overflow-x: hidden; font-family: 'Montserrat', sans-serif; }
+body { background: #ffffff; overflow: hidden; font-family: 'Montserrat', sans-serif; }
 .scroll-container {
   display: flex;
+  align-items: center;            /* vertical centering */
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   height: 100vh;
-  padding: 0 10vw; /* show peek of next cards */
+  padding: 0 15vw;               /* show prior/next peeks */
 }
 
 /* FLASHCARD & SCROLL SNAP */
 .flashcard {
-  flex: 0 0 80vw; /* narrower to reveal peeks */
-  height: 90vh;
-  margin-right: 2vw;
-  scroll-snap-align: start; /* snap to start to align left edge */
+  flex: 0 0 70vw;               /* card width: 70% viewport */
+  height: 80vh;                 /* card height: 80% viewport */
+  margin: 0 5vw;                /* horizontal gap between cards */
+  scroll-snap-align: center;    /* snap center of card */
   perspective: 1000px;
   position: relative;
 }
@@ -40,40 +41,34 @@ body { background: #ffffff; overflow-x: hidden; font-family: 'Montserrat', sans-
 .flashcard.flipped .card-inner { transform: rotateX(180deg); }
 
 /* FRONT CONTENT */
-.logo { max-width: 60%; margin-bottom: 2rem; } /* larger logo */
-.mission {
-  font-family: 'Recoleta', serif; font-weight: 600;
+.logo { max-width: 60%; margin-bottom: 2rem; }
+.mission { font-family: 'Recoleta', serif; font-weight: 600;
   color: #5c6a5a; text-transform: lowercase;
   font-size: 2.5rem; margin-bottom: 1.5rem;
 }
-.cta-text {
-  font-family: 'Recoleta', serif; font-weight: 600;
+.cta-text { font-family: 'Recoleta', serif; font-weight: 600;
   font-size: 1.2rem; color: #000;
   cursor: pointer; transition: transform 0.2s, opacity 0.2s;
 }
 .cta-text:hover { transform: translateY(-4px); opacity: 0.8; }
-.card-front h3 {
-  font-family: 'Recoleta', serif; font-weight: 600;
+.card-front h3 { font-family: 'Recoleta', serif; font-weight: 600;
   font-size: 1.5rem; margin-bottom: 1rem;
 }
-.front-header {
-  font-family: 'Recoleta', serif; font-weight: 400;
+.front-header { font-family: 'Recoleta', serif; font-weight: 400;
   font-size: 1rem; margin-bottom: 1rem;
 }
-.front-btn {
-  font-family: 'Recoleta', serif; font-weight: 400;
+.front-btn { font-family: 'Recoleta', serif; font-weight: 400;
   background: #5c6a5a; color: #fff; border: none;
   padding: 0.5rem 1rem; border-radius: 6px;
   cursor: pointer;
 }
 
 /* BACK BUTTON */
-.back-btn {
-  position: absolute; top: 1rem; left: 1rem;
+.back-btn { position: absolute; top: 1rem; left: 1rem;
   background: none; border: none;
   font-size: 2rem; color: #5c6a5a;
   cursor: pointer;
 }
 
-/* REMOVE OUTER SCROLLBAR */
+/* HIDE SCROLLBAR WHERE POSSIBLE */
 .scroll-container::-webkit-scrollbar { display: none; }
