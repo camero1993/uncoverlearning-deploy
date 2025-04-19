@@ -1,0 +1,60 @@
+from typing import Optional
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+# Your RAG pipeline imports
+from rag_pipeline import (
+    hybrid_search,
+    generate_embedding,
+    format_prompt_with_context,
+    generate_response,
+)
+
+app = FastAPI()
+
+# 1) Enable CORS so your JS can call from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],            # in prod, restrict to your domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class QueryRequest(BaseModel):
+    query: str
+    file_title: Optional[str] = None  # now optional
+
+@app.post("/ask")
+async def ask_question(request: QueryRequest):
+    # 2) Generate embedding
+    embedding = generate_embedding(
+        request.query,
+        model="text-embedding-ada-002",
+        api_key="your-openai-api-key"
+    )
+
+    # 3) Hybrid search, passing empty string if file_title was omitted
+    results = hybrid_search(
+        supabase_url="https://your-project.supabase.co",
+        supabase_key="your-supabase-service-key",
+        query=request.query,
+        query_embedding=embedding,
+        match_count=10,
+        full_text_weight=1.0,
+        semantic_weight=1.0,
+        rrf_k=50,
+        file_title=request.file_title or "",
+    )
+
+    # 4) Format and generate the final answer
+    prompt = format_prompt_with_context(results, request.query)
+    answer = generate_response(
+        user_prompt=prompt,
+        system_prompt="You are a helpful tutor.",
+        model="gpt-3.5-turbo",
+        api_key="your-openai-api-key"
+    )
+
+    return {"answer": answer}
