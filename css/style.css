@@ -6,30 +6,28 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 body {
   background: #ffffff;
   overflow-x: hidden;
   font-family: 'Montserrat', sans-serif;
 }
-
 .scroll-container {
   display: flex;
-  align-items: center;                 /* center cards vertically */
+  align-items: center;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   height: 100vh;
-  padding: 0 12vw;                      /* peek of previous/next cards */
+  padding: 0 12vw;            /* peek of prev/next cards */
 }
 
 /*------------------------------
   FLASHCARD SIZING & POSITIONING
 -------------------------------*/
 .flashcard {
-  flex: 0 0 70vw;                       /* cards take 70% of viewport width */
-  height: 80vh;                         /* 80% of viewport height */
-  margin: 0 3vw;                        /* gap between cards */
+  flex: 0 0 70vw;             /* 70% viewport width */
+  height: 80vh;               /* 80% viewport height */
+  margin: 0 3vw;              /* gap between cards */
   scroll-snap-align: center;
   perspective: 1000px;
   position: relative;
@@ -44,7 +42,6 @@ body {
   transform-style: preserve-3d;
   transition: transform 0.6s ease-in-out;
 }
-
 .card-front,
 .card-back {
   position: absolute;
@@ -57,34 +54,57 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;             /* front centering */
+  justify-content: center;   /* front: centered */
   padding: 1rem;
   text-align: center;
   overflow: hidden;
 }
 
-/* X‑axis flip */
+/* Flip for non-logo cards */
 .flashcard.flipped .card-inner {
   transform: rotateX(180deg);
 }
-
-/* BACK PANEL OVERRIDE: top‑align content */
+/* Back panel starts flipped */
 .card-back {
   transform: rotateX(180deg);
-  justify-content: flex-start;         /* push content to top */
-  padding-top: 2rem;                   /* space above title */
+  justify-content: flex-start; /* back: top-aligned */
+  padding-top: 2rem;
+}
+
+/*----------------------------------------
+   LOGO CARD: EXPAND WITHOUT ANIMATION
+-----------------------------------------*/
+/* Expanded state on logo card */
+#logo-card.expanded {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  flex: none;
+  scroll-snap-align: none;
+  z-index: 1000;
+  overflow: hidden;
+}
+/* Show its back face instantly */
+#logo-card.expanded .card-inner {
+  transform: rotateX(180deg);
+  transition: none;
+}
+/* Chat UI fills back */
+#logo-card.expanded .card-back {
+  padding: 0;
 }
 
 /*----------------
   FRONT CONTENT
 -----------------*/
-/* Logo: now extra large on first card */
+/* Logo: extra large */
 #logo-card .logo {
   max-width: 90%;
   margin-bottom: 2rem;
 }
-
-/* Mission text (logo card) */
+/* Mission text */
 .mission {
   font-family: 'Fraunces', serif;
   font-weight: 600;
@@ -93,8 +113,7 @@ body {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
 }
-
-/* CTA text (logo card) */
+/* CTA text */
 .cta-text {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
@@ -108,7 +127,7 @@ body {
   opacity: 0.8;
 }
 
-/* Card titles (h3) - now huge */
+/* Card titles (front & back) */
 .card-front h3,
 .card-back h3 {
   font-family: 'Fraunces', serif;
@@ -116,7 +135,6 @@ body {
   font-size: 4rem;
   margin: 1rem 0 0.5rem;
 }
-
 /* Headers/copy under titles */
 .front-header,
 .back-header {
@@ -125,8 +143,7 @@ body {
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
 }
-
-/* Front‑face buttons */
+/* Front buttons */
 .front-btn,
 .connect-btn {
   font-family: 'Montserrat', sans-serif;
@@ -139,7 +156,9 @@ body {
   cursor: pointer;
 }
 
-/* Stats layout (problem card) */
+/*--------------------
+  “The Problem” Stats
+---------------------*/
 .stats-container {
   display: flex;
   flex-direction: column;
@@ -160,7 +179,9 @@ body {
   text-align: left;
 }
 
-/* Mission bullet list */
+/*--------------------
+  Mission Bullet List
+---------------------*/
 .mission-list {
   list-style: disc inside;
   margin-top: 1rem;
@@ -168,7 +189,9 @@ body {
   font-size: 1rem;
 }
 
-/* Team layout */
+/*--------------------
+   Team Section
+---------------------*/
 .team-container {
   display: flex;
   flex-direction: column;
@@ -201,10 +224,11 @@ body {
 .linkedin-icon {
   width: 24px;
   height: 24px;
-  margin-left: 0.5rem;
 }
 
-/* Contact form (front only) */
+/*-------------------------
+  Contact Front‑Face Only
+--------------------------*/
 .contact-form-container {
   display: flex;
   gap: 1rem;
@@ -220,8 +244,6 @@ body {
 .contact-form-container .connect-btn {
   flex-shrink: 0;
 }
-
-/* Contact text */
 .contact-text {
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
@@ -229,9 +251,90 @@ body {
   margin-top: 1rem;
 }
 
-/*---------------
-  BACK BUTTON
-----------------*/
+/*---------------------
+   Chatbot Tutor UI
+----------------------*/
+.chat-container {
+  flex: 1;
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+.textbook-panel {
+  flex: 1;
+  padding: 2rem;
+  border-right: 1px solid #e0e0e0;
+}
+.textbook-panel .placeholder {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  color: #666;
+  text-align: center;
+  margin-top: 2rem;
+}
+.chat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.chat-window {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+.chat-bubble {
+  max-width: 80%;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  line-height: 1.4;
+}
+.chat-bubble.user {
+  background: #e0e0e0;
+  align-self: flex-end;
+}
+.chat-bubble.ai {
+  background: #5c6a5a;
+  color: #fff;
+  align-self: flex-start;
+}
+.prompt-area {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+}
+.chat-input {
+  flex: 1;
+  resize: none;
+  height: 3rem;
+  padding: 0.75rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-right: 0.75rem;
+}
+.send-btn {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: none;
+  background: #5c6a5a;
+  color: #fff;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.send-btn:hover {
+  background: #4a554a;
+}
+
+/*------------------------
+  BACK BUTTON (all cards)
+-------------------------*/
 .back-btn {
   position: absolute;
   top: 1rem;
@@ -243,36 +346,7 @@ body {
   cursor: pointer;
 }
 
-/* Hide scrollbar for clean look */
+/* Hide scrollbar */
 .scroll-container::-webkit-scrollbar {
   display: none;
-}
-/* ---------------------------------------
-   LOGO CARD: FULL‑SCREEN EXPANSION ON FLIP
-   --------------------------------------- */
-
-/* When the logo card gains .flipped, pull it out of the scroll flow */
-#logo-card.flipped {
-  position: fixed;      /* sit on top of everything */
-  top: 0;
-  left: 0;
-  width: 100vw;         /* fill viewport width */
-  height: 100vh;        /* fill viewport height */
-  margin: 0;            /* override any card margins */
-  flex: none;           /* don’t shrink or grow in the flex container */
-  scroll-snap-align: none;
-  z-index: 1000;        /* above the scroll container */
-  overflow: hidden;
-}
-
-/* Make its inner flipped face also fill completely */
-#logo-card.flipped .card-inner {
-  width: 100%;
-  height: 100%;
-}
-
-/* Ensure back face content is still top‑aligned under the back‑btn */
-#logo-card.flipped .card-back {
-  justify-content: flex-start;
-  padding-top: 2rem;
 }
