@@ -1,7 +1,12 @@
-fastapi
-uvicorn
-openai
-httpx
+requests
+google-cloud-storage
+PyMuPDF
+pytesseract
+Pillow
+tqdm
 supabase
-tiktoken
+google-generativeai
 python-dotenv
+fastapi  # Keep if you plan to use FastAPI for your web framework
+uvicorn  # Keep if you plan to use Uvicorn to run your FastAPI app
+httpx    # Keep as it's a dependency for some libraries
