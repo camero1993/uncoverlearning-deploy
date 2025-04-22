@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const RENDER_BACKEND_BASE_URL = 'https://uncoverlearning-deploy.onrender.com';
   // Existing Flashcard Logic
   const cards = document.querySelectorAll('.flashcard');
 
@@ -87,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 2) Send to backend (to the /ask endpoint)
       try {
-        const res = await fetch('/ask', {
+        const res = await fetch(`${RENDER_BACKEND_BASE_URL}/ask`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       uploadStatus.style.color = 'blue'; // Indicate ongoing process
 
       try {
-        const response = await fetch('/upload_document/', {
+        const response = await fetch(`${RENDER_BACKEND_BASE_URL}/upload_document/`, {
           method: 'POST',
           body: formData, // Send the FormData object
           // Do NOT set Content-Type header for FormData, the browser handles it
