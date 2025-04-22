@@ -1,0 +1,3 @@
+fastapi
+uvicorn
+# plus any packages your rag_pipeline.py uses, like openai, PyMuPDF, etc.
