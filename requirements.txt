@@ -6,6 +6,7 @@ Pillow
 tqdm
 supabase
 google-generativeai
+python-multipart
 python-dotenv
 fastapi  # Keep if you plan to use FastAPI for your web framework
 uvicorn  # Keep if you plan to use Uvicorn to run your FastAPI app
