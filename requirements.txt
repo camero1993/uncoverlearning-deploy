@@ -1,3 +1,7 @@
 fastapi
 uvicorn
-# plus any packages your rag_pipeline.py uses, like openai, PyMuPDF, etc.
+openai
+httpx
+supabase
+tiktoken
+python-dotenv
