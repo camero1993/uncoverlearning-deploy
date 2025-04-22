@@ -22,22 +22,39 @@
         </div>
         <!-- BACK (Chat UI) -->
         <div class="card-back">
-          <button class="back-btn">&larr;</button>
-          <div class="chat-container">
-            <div class="textbook-panel">
-              <p class="placeholder">[Textbook content will appear here]</p>
-            </div>
-            <div class="chat-box">
-              <div class="chat-window"></div>
-              <div class="prompt-area">
-                <textarea class="chat-input" placeholder="Type your prompt..."></textarea>
-                <button class="send-btn" title="Send prompt">➤</button>
+      <button class="back-btn">&larr;</button>
+
+      <div class="upload-section">
+          <h3>Upload a New Document</h3>
+          <form id="uploadForm" action="/upload_document/" method="post" enctype="multipart/form-data">
+              <div class="form-group">
+                  <label for="pdfFile">Select PDF:</label>
+                  <input type="file" id="pdfFile" name="file" accept=".pdf" required>
               </div>
-            </div>
+
+              <div class="form-group">
+                  <label for="docName">Name for Document:</label>
+                  <input type="text" id="docName" name="original_name" required placeholder="e.g., My Text Book Chapter 1">
+              </div>
+
+              <button type="submit">Upload & Process</button>
+
+              <p id="uploadStatus" class="status-message"></p> </form>
+      </div>
+      <div class="chat-container">
+        <div class="textbook-panel">
+          <p class="placeholder">[Textbook content will appear here]</p>
+        </div>
+        <div class="chat-box">
+          <div class="chat-window"></div>
+          <div class="prompt-area">
+            <textarea class="chat-input" placeholder="Type your prompt..."></textarea>
+            <button class="send-btn" title="Send prompt">➤</button>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
     <!-- 2) The Problem -->
     <div class="flashcard" data-card="problem">
