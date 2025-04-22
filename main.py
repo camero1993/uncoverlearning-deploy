@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 from typing import Annotated
 from dotenv import load_dotenv
 import io
@@ -27,6 +28,27 @@ except ImportError:
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# --- CORS Configuration ---
+# Define the origins that are allowed to make requests to your backend.
+# IMPORTANT: Replace the URL below with the actual URL(s) of your Vercel frontend deployment(s).
+# If you have a custom domain, include that as well.
+# If you are testing locally, you might add "http://localhost:3000" or whatever port your local frontend runs on.
+# In production, AVOID using ["*"] as it allows *any* website to access your API, which is a security risk.
+origins = [
+    "https://uncoverlearning-deploy-hsye8ysgk-magnus-projects-a977a13e.vercel.app",
+    # Add other Vercel deployment URLs or custom domains here if needed
+    # "https://your-custom-domain.com",
+    # "http://localhost:3000", # Example for local development
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,      # List of origins that are allowed to make requests
+    allow_credentials=True,     # Allow cookies to be included in requests
+    allow_methods=["*"],        # Allow all HTTP methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],        # Allow all headers
+)
 
 # --- Configuration (can be moved to .env or config file) ---
 # Get configuration from environment variables loaded by dotenv
@@ -128,10 +150,3 @@ async def query_document(query: Annotated[str, Form(description="User query")], 
 @app.get("/")
 async def read_root():
     return {"message": "RAG Pipeline Wrapper API is running."}
-
-# To run this application:
-# 1. Save the code as main.py
-# 2. Make sure rag_pipeline.py is in the same directory
-# 3. Install necessary libraries: pip install fastapi uvicorn python-dotenv requests google-cloud-storage PyMuPDF pytesseract Pillow tqdm supabase google-generativeai
-# 4. Set up your environment variables in a .env file
-# 5. Run the application using uvicorn: uvicorn main:app --reload
