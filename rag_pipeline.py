@@ -21,6 +21,8 @@ gcp_credentials = load_gcp_credentials()
 # Check if credentials were loaded successfully before proceeding with GCP operations
 if gcp_credentials is None:
     print("FATAL ERROR: Google Cloud credentials not loaded. Cannot proceed with GCP operations.")
+    import sys
+    sys.exit(1)
 
 # Set environment variables or manually insert them
 SUPABASE_URL = os.getenv("SUPABASE_URL")
