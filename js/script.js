@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chatWin.scrollTop = chatWin.scrollHeight;
       chatInput.value = ''; // Clear input after sending
 
-      // 2) Send to backend (to the /ask endpoint)
+      // 2) Send to backend (to the /query_document endpoint)
       try {
         const res = await fetch(`${RENDER_BACKEND_BASE_URL}/query_document`, {
           method: 'POST',
