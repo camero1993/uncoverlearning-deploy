@@ -12,7 +12,7 @@ from typing import Optional
 # Load environment variables from .env file
 load_dotenv()
 
-app.mount("/static", StaticFiles(directory="Psychiatric-Mental_Health_Nursing-WEB.pdf"), name="static")
+app.mount("/static", StaticFiles(directory="."), name="static") # <<< CHANGE THIS LINE
 
 
 # Import functions from your rag_pipeline.py file
