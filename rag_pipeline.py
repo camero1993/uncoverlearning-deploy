@@ -58,7 +58,7 @@ def upload_to_gcp(buffer: bytes, filename: str, destination: str):
     if not GCP_BUCKET:
         raise ValueError("GCP_BUCKET environment variable is not set.")
         
-    storage_client = storage.Client()
+    storage_client = storage.Client(credentials=gcp_credentials)
     bucket = storage_client.bucket(GCP_BUCKET)
     full_path = f"{destination}/{filename}"
 
