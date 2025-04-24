@@ -22,9 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // --- Set the PDF source when the chat interface is shown ---
           if (pdfViewer) {
-              // IMPORTANT: Replace 'path/to/your/document.pdf' with the actual URL
+              // IMPORTANT: Replace '/static/your_document_name.pdf' with the actual URL
               // where your backend serves the PDF file.
-              // If using FastAPI StaticFiles mounted at /static, it would be like '/static/your_document_name.pdf'
+              // This assumes your backend serves static files from /static.
               pdfViewer.src = `${RENDER_BACKEND_BASE_URL}/static/Psychiatric-Mental_Health_Nursing-WEB.pdf`; // <<< CHANGE THIS PATH >>>
               console.log("PDF viewer source set to:", pdfViewer.src); // Log for debugging
           }
@@ -46,8 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
           // -----------------------------------------
         });
       }
-      // Don't return here anymore, we need to attach listeners
-      // for upload and chat *inside* the logo card back
     } else {
        // Other cards: standard flip front/back
        if (trigger) {
@@ -64,13 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
        }
     }
   });
-    // NOTE: The flashcard loop structure was slightly adjusted to
-    // NOT return early for the logo card, as upload/chat listeners
-    // are within it. Moved other card logic into an else block.
 
 
   //
-  // Chatbot prompt handler (remains largely the same)
+  // Chatbot prompt handler
   //
   const sendBtn = document.querySelector('#logo-card .send-btn');
   const chatInput = document.querySelector('#logo-card .chat-input');
@@ -89,20 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = chatInput.value.trim();
       if (!query) return;
 
-      // IMPORTANT: If your RAG is specific to a document,
-      // you need a way to get the currently selected document title here.
-      // This is a placeholder - replace with actual logic to get the title.
-      // If your RAG is over ALL documents, you might omit file_title
-      // and update the Python search logic accordingly.
-      // You might get the title of the LAST uploaded document, for example.
-      // For now, using null as the frontend doesn't provide it, but backend hardcodes.
-      const currentFileTitle = null; // <--- Keep this null as backend hardcodes for now
-
-
       // 1) Render user bubble
       const userBubble = document.createElement('div');
       userBubble.className = 'chat-bubble user';
-      userBubble.textContent = query;
+      userBubble.textContent = query; // User input is just text
       chatWin.appendChild(userBubble);
       chatWin.scrollTop = chatWin.scrollHeight;
       chatInput.value = ''; // Clear input after sending
@@ -114,8 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             query: query,
-            // We are NOT sending file_title from the frontend in this hardcoded scenario
-            // ...(currentFileTitle && { file_title: currentFileTitle }) // Commented out as backend hardcodes
+            // file_title is hardcoded in the backend for now
           }),
         });
 
@@ -129,7 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3) Render AI bubble
         const aiBubble = document.createElement('div');
         aiBubble.className = 'chat-bubble ai';
-        aiBubble.textContent = data.answer ?? 'No answer could be retrieved.';
+
+        // --- MODIFIED: Convert AI response (assumed Markdown) to HTML and use innerHTML ---
+        const aiResponseText = data.answer ?? 'No answer could be retrieved.';
+        // Use marked.js to convert Markdown to HTML
+        const aiResponseHTML = marked.parse(aiResponseText);
+        aiBubble.innerHTML = aiResponseHTML; // Use innerHTML to render the HTML
+        // ---------------------------------------------------------------------------------
+
         chatWin.appendChild(aiBubble);
         chatWin.scrollTop = chatWin.scrollHeight;
 
@@ -146,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   //
-  // PDF Upload Handler (NEW SECTION) - Commented out HTML in index.html
+  // PDF Upload Handler (Commented out HTML in index.html)
   //
   // const uploadForm = document.getElementById('uploadForm');
   // const uploadStatus = document.getElementById('uploadStatus');
@@ -174,14 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
   //         uploadStatus.style.color = 'green'; // Indicate success
   //         // Optionally clear the form or update UI upon success
   //         uploadForm.reset();
-
-  //         // --- Optional: Store the uploaded file title ---
-  //         // If you want the chatbot to query the *last* uploaded document,
-  //         // you would store its title here in a variable accessible by the chatbot handler.
-  //         // Example:
-  //         // window.lastUploadedFileTitle = formData.get('original_name');
-  //         // You would then use window.lastUploadedFileTitle in the chatbot fetch call.
-  //         // -----------------------------------------------
 
   //       } else { // Handle errors (HTTP status 4xx or 5xx)
   //         uploadStatus.textContent = 'Error: ' + (result.detail || result.message || response.statusText || 'Upload failed.');
