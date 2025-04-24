@@ -4,43 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Uncover Learning Prototype</title>
-  <!-- Fonts: Fraunces for titles, Montserrat for headers & body copy -->
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Montserrat:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div class="scroll-container">
     
-    <!-- 1) Logo Card -->
     <div class="flashcard" id="logo-card">
       <div class="card-inner">
-        <!-- FRONT -->
         <div class="card-front">
           <img src="assets/logo.png" alt="Uncover Learning Logo" class="logo">
           <h1 class="mission">engineer equitable education everywhere</h1>
           <p class="cta-text">click to uncover our textbook tutor prototype</p>
         </div>
-        <!-- BACK (Chat UI) -->
         <div class="card-back">
       <button class="back-btn">&larr;</button>
 
-      <div class="upload-section">
-          <h3>Upload a New Document</h3>
-          <form id="uploadForm" action="/upload_document/" method="post" enctype="multipart/form-data">
-              <div class="form-group">
-                  <label for="pdfFile">Select PDF:</label>
-                  <input type="file" id="pdfFile" name="file" accept=".pdf" required>
-              </div>
-
-              <div class="form-group">
-                  <label for="docName">Name for Document:</label>
-                  <input type="text" id="docName" name="original_name" required placeholder="e.g., My Text Book Chapter 1">
-              </div>
-
-              <button type="submit">Upload & Process</button>
-
-              <p id="uploadStatus" class="status-message"></p> </form>
-      </div>
       <div class="chat-container">
         <div class="textbook-panel">
           <p class="placeholder">[Textbook content will appear here]</p>
@@ -56,7 +35,6 @@
     </div>
   </div>
 
-    <!-- 2) The Problem -->
     <div class="flashcard" data-card="problem">
       <div class="card-inner">
         <div class="card-front">
@@ -73,15 +51,15 @@
           <div class="stats-container">
             <div class="stats-row">
               <span class="stat-number">$345</span>
-              <span class="stat-text">average cost: textbooks – semester (student survey)</span>
+              <span class="stat-text">average cost: textbooks – semester (student survey)</span>
             </div>
             <div class="stats-row">
               <span class="stat-number">$126</span>
-              <span class="stat-text">average cost: digital course subscription (New York Times, 2016)</span>
+              <span class="stat-text">average cost: digital course subscription (New York Times, 2016)</span>
             </div>
             <div class="stats-row">
               <span class="stat-number">65%</span>
-              <span class="stat-text">students avoiding required books due to price (U.S PIRG, 2020)</span>
+              <span class="stat-text">students avoiding required books due to price (U.S PIRG, 2020)</span>
             </div>
             <div class="stats-row">
               <span class="stat-number">56%</span>
@@ -92,7 +70,6 @@
       </div>
     </div>
 
-    <!-- 3) Our Solution -->
     <div class="flashcard" data-card="solution">
       <div class="card-inner">
         <div class="card-front">
@@ -112,7 +89,6 @@
       </div>
     </div>
 
-    <!-- 4) Our Mission -->
     <div class="flashcard" data-card="mission">
       <div class="card-inner">
         <div class="card-front">
@@ -136,7 +112,6 @@
       </div>
     </div>
 
-    <!-- 5) Our Team -->
     <div class="flashcard" data-card="team">
       <div class="card-inner">
         <div class="card-front">
@@ -184,7 +159,6 @@
       </div>
     </div>
 
-    <!-- 6) Contact (no flip) -->
     <div class="flashcard">
       <div class="card-inner">
         <div class="card-front">
@@ -199,8 +173,6 @@
       </div>
     </div>
 
-  </div><!-- .scroll-container -->
-
-  <script src="js/script.js"></script>
+  </div><script src="js/script.js"></script>
 </body>
 </html>
