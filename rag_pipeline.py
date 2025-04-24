@@ -3,7 +3,7 @@ import json
 import requests
 from google.cloud import storage
 from datetime import timedelta
-from typing import List
+from typing import List, Dict, Any
 import io
 import fitz  # PyMuPDF
 import pytesseract
@@ -13,6 +13,7 @@ from supabase import create_client
 import google.generativeai as genai
 from dotenv import load_dotenv
 from gcp_credentials_loader import load_gcp_credentials
+import uuid
 
 # Load environment variables
 load_dotenv()
@@ -52,6 +53,45 @@ def supabase_insert(table: str, object_data: dict, supabase_url: str, api_key: s
         # Consider raising an exception here in a production environment
         response.raise_for_status()
     return response.json()
+
+def supabase_batch_insert(table: str, data_list: List[Dict[str, Any]], supabase_url: str, api_key: str):
+    """Inserts a list of data objects (batch) into a specified Supabase table."""
+    if not data_list:
+        print("Warning: Attempted to insert an empty batch.")
+        return [] # Return empty list if there's no data to insert
+
+    url = f"{supabase_url}/rest/v1/{table}"
+    headers = {
+        "apikey": api_key,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation" # Get the inserted rows back in the response
+    }
+
+    print(f"Attempting batch insert of {len(data_list)} records into table '{table}'...") # Log attempt
+
+    try:
+        # Send a JSON array of objects
+        # requests.post(json=...) automatically handles converting the list of dicts to a JSON array
+        response = requests.post(url, headers=headers, json=data_list)
+
+        # Check for HTTP errors (status codes 4xx or 5xx)
+        if not response.ok:
+             print(f"Error during batch insert into '{table}':")
+             print("Status Code:", response.status_code)
+             print("Response Text:", response.text)
+             response.raise_for_status() # Raises an HTTPError
+
+        print(f"Successfully inserted batch into '{table}'.") # Log success
+        return response.json() # Returns a list of the inserted records if Prefer is set
+
+    except requests.exceptions.RequestException as e:
+        # Catch request-specific errors (network issues, timeouts, etc.)
+        print(f"Network or request error during batch insert into '{table}': {e}")
+        # You might want to print the response text if available for more details on HTTP errors
+        if hasattr(e, 'response') and hasattr(e.response, 'text'):
+            print(f"Supabase response body: {e.response.text}")
+        raise # Re-raise the exception after logging
+
 
 def upload_to_gcp(buffer: bytes, filename: str, destination: str):
     """Uploads a file buffer to a specified GCP bucket and destination."""
@@ -309,97 +349,157 @@ def generate_gemini_response(user_prompt: str, system_prompt: str, gemini_api_ke
 def process_document(
     buffer: bytes,
     original_name: str,
-    supabase_table: str,
+    supabase_table: str, # Table name for file metadata ('files')
     supabase_url: str,
     supabase_key: str,
     chunk_size: int,
-    destination: str,
-    model: str, # Embedding model name
-    gemini_api_key: str
+    destination: str, # GCP destination folder name
+    model: str, # Embedding model name (e.g., "models/text-embedding-004")
+    gemini_api_key: str # Passed explicitly, but also loaded globally. Ensure consistency.
+    # Removed gcp_credentials argument
 ):
     """
     Master function to process a document: upload, extract text, chunk,
-    embed, and store metadata and chunks in Supabase.
+    embed, and store metadata and chunks in Supabase (using batching).
+    Relies on global variables for GCP/Supabase credentials and config.
     """
-    if not supabase_url or not supabase_key or not GCP_BUCKET or not gemini_api_key:
-         raise ValueError("Missing required environment variables for processing.")
+    # Check required global variables
+    # Check variables read directly or used by functions relying on globals
+    if not SUPABASE_URL or not SUPABASE_KEY or not GCP_BUCKET or not gemini_api_key:
+         missing = []
+         if not SUPABASE_URL: missing.append("SUPABASE_URL")
+         if not SUPABASE_KEY: missing.append("SUPABASE_KEY")
+         if not GCP_BUCKET: missing.append("GCP_BUCKET")
+         if not gemini_api_key: missing.append("gemini_api_key")
+         # Note: gcp_credentials is checked within upload_to_gcp in this global setup
+         raise ValueError(f"Missing required global variables for processing: {', '.join(missing)}")
+
 
     # Step 1: Upload to GCP
     print("📤 Uploading file to GCP...")
-    # Use a unique filename to avoid conflicts, e.g., original_name + timestamp or a UUID
-    unique_filename = f"{os.path.splitext(original_name)[0]}_{os.urandom(4).hex()}{os.path.splitext(original_name)[1] if os.path.splitext(original_name)[1] else '.pdf'}"
+    # Use a unique filename (uuid is better)
+    file_extension = os.path.splitext(original_name)[1] if os.path.splitext(original_name)[1] else '.pdf'
+    unique_filename = f"{os.path.splitext(original_name)[0]}_{uuid.uuid4().hex}{file_extension}" # Use uuid
+
+    # --- MODIFIED: Call upload_to_gcp without passing credentials ---
+    # It will use the global gcp_credentials variable
     gcp_url = upload_to_gcp(buffer, unique_filename, destination)
+    # ----------------------------------------------------------------
+
     print(f"✅ Uploaded to GCP: {gcp_url}")
 
     # Step 2: Insert file metadata to Supabase
     print("📝 Inserting file record to Supabase...")
+    file_id = uuid.uuid4().hex # Use uuid for the file ID
     file_metadata = {
-        # Using a UUID for the file ID is generally better practice
-        "id": os.urandom(16).hex(), # Generate a simple hex ID for the file record
+        "id": file_id, # Use uuid for the file ID
         "title": original_name,
-        "link": gcp_url, # Store the GCP URL
-        "license": "unknown", # optional: set a default if needed
-        "in_database": True # optional: if you want to flag it's been uploaded
-        # 'subject' is not included — add if needed
+        "link": gcp_url,
+        "license": "unknown",
+        "in_database": True
     }
 
+    # Use the single insert function for file metadata
     # Supabase insert returns a list of inserted objects
-    file_record = supabase_insert(supabase_table, file_metadata, supabase_url, supabase_key)
-    if not file_record:
-         raise Exception("Failed to insert file metadata into Supabase.")
-    file_id = file_record[0]["id"]
+    file_record_response = supabase_insert(supabase_table, file_metadata, supabase_url, supabase_key)
+    if not file_record_response or not isinstance(file_record_response, list) or not file_record_response:
+         raise Exception("Failed to insert file metadata into Supabase or received unexpected response.")
+
+    # Extract the ID from the inserted record's response (safer to use DB assigned ID)
+    inserted_file_record = file_record_response[0]
+    file_id_from_db = inserted_file_record.get("id")
+    if file_id_from_db:
+         file_id = file_id_from_db # Use the ID returned by the DB if available
+    else:
+         print(f"Warning: Inserted file record did not return an 'id'. Using generated ID: {file_id}")
+         # Fallback to the generated ID if DB doesn't return one (ensure your table schema returns ID on insert)
+
+
     print(f"✅ Inserted file record to Supabase with ID: {file_id}")
 
 
     # Step 3: Extract text from the uploaded file URL
     print("📄 Extracting text from PDF...")
     # Pass the GCP URL for text extraction
-    content = pdf_to_text(pdf_url=gcp_url)
+    content = pdf_to_text(pdf_url=gcp_url) # Assuming pdf_to_text handles URLs
     print("✅ Text extraction complete.")
 
     # Step 4: Split into chunks
     print("✂️ Splitting text into chunks...")
-    chunks = split_text(content, chunk_size)
+    chunks = split_text(content, chunk_size) # Assuming split_text returns a list of strings
     print(f"✅ Created {len(chunks)} chunks.")
 
     # Step 5 & 6: Generate embeddings and insert chunks into Supabase
     print("🧠 Generating embeddings and uploading chunks to Supabase...")
+
+    # --- ADDED BATCHING LOGIC ---
+    chunk_batch_data = [] # List to hold data for a batch
+    batch_size = 100 # <<< Configure your desired batch size here >>>
+
     for i, chunk in enumerate(chunks):
-        #print(f"🔍 Processing chunk {i + 1}/{len(chunks)}...")
+        # Keep chunk processing printout for progress tracking
+        print(f"🔍 Processing chunk {i + 1}/{len(chunks)}...")
 
         try:
             # Generate embedding for the chunk
+            # The generate_gemini_embedding signature expects (content: str, gemini_api_key: str)
+            # gemini_api_key is passed explicitly as an argument to process_document
             embedding = generate_gemini_embedding(chunk, gemini_api_key)
 
-            # Insert chunk data into Supabase 'chunks' table
+            # Prepare data for the chunk
             chunk_data = {
-                # Using a UUID for the chunk ID is recommended
-                "id": f"{file_id}_chunk_{i}", # Simple ID based on file ID and position
-                "fileId": file_id, # Link to the file record
+                # Use a robust ID system. Supabase can generate UUIDs automatically if configured.
+                # Using file_id_from_db in the ID might be safer if the DB generated the file ID.
+                "id": f"{file_id}_chunk_{i}", # Example ID format
+                "fileId": file_id, # Link to the file record (using the ID obtained after DB insert)
                 "position": i,
                 "extractedText": chunk,
-                "embedding": embedding,
-                "originalName": original_name, # Store original name for easier filtering
-                "downloadUrl": gcp_url # Store the file URL with the chunk
+                "embedding": embedding, # Ensure embedding format matches your DB (vector type)
+                "originalName": original_name,
+                "downloadUrl": gcp_url # Optional: Store the file URL with the chunk
             }
 
-            supabase_insert("chunks", chunk_data, supabase_url, supabase_key)
-            print(f"✅ Processed and uploaded chunk {i + 1}")
+            # Add chunk data to the current batch list
+            chunk_batch_data.append(chunk_data)
 
-        except Exception as chunk_e:
-            print(f"❌ Error processing chunk {i + 1}: {chunk_e}")
-            # Decide how to handle chunk processing errors - skip, retry, etc.
-            # For now, just print and continue with the next chunk.
-            pass
+            # Check if the batch is ready for upload
+            # Batch is ready if it's full OR if it's the last chunk AND there are chunks in the batch
+            if chunk_batch_data and ((i + 1) % batch_size == 0 or (i + 1) == len(chunks)):
+                print(f"⬆️ Uploading batch of {len(chunk_batch_data)} chunks to Supabase...")
+                # --- Perform a single batch insert using the new function ---
+                try:
+                    # supabase_url and supabase_key are used here, assumed to be global
+                    supabase_batch_insert("chunks", chunk_batch_data, supabase_url, supabase_key)
+                    print(f"✅ Batch upload successful.")
+                except Exception as batch_upload_e:
+                    # Handle errors for the *entire batch*
+                    print(f"❌ Error uploading batch: {batch_upload_e}")
+                    # Decide how to handle this critical error: re-raise? Log batch data?
+                    # Re-raising will stop the entire process. Logging might lose data.
+                    # For now, print and continue, but be aware data might be missing.
+                    # A robust solution might save failed batches for retry.
+                    pass # Continue loop despite batch upload failure
+
+                chunk_batch_data = [] # Clear the list for the next batch
+
+        except Exception as chunk_processing_e:
+            # Error specific to processing a single chunk (embedding failure, etc.)
+            print(f"❌ Error processing chunk {i + 1}: {chunk_processing_e}")
+            # Decide how to handle chunk processing errors: skip, retry, etc.
+            # If you 'pass' here, the failed chunk's data won't be added to the batch.
+            pass # Continue loop despite single chunk processing failure
+    # --- END BATCHING LOGIC ---
 
 
-    print("✅ All chunks processed and uploaded.")
+    print("✅ All chunks processed and Supabase batch uploads initiated.")
     return {
         "file_url": gcp_url,
-        "file_id": file_id,
+        "file_id": file_id, # Using the file ID obtained after DB insert
         "total_chunks": len(chunks),
         # Return a sample of the first embedding (first 5 elements) if embeddings were generated
-        "sample_embedding": generate_gemini_embedding(chunks[0], model, gemini_api_key)[:5] if chunks else []
+        # Corrected the call to generate_gemini_embedding for the sample
+        # The 'model' variable is not used here, gemini_api_key is the second arg
+        "sample_embedding": generate_gemini_embedding(chunks[0], gemini_api_key)[:5] if chunks else []
     }
 
 # Example usage (commented out for web wrapper)
