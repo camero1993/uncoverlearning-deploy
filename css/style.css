@@ -53,10 +53,10 @@ body {
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;   /* front: centered */
-  padding: 1rem;
-  text-align: center;
+  /* Removed align-items: center; and justify-content: center; from shared styles
+     as card-back needs flex-start alignment for its content */
+  padding: 1rem; /* Keep base padding */
+  text-align: center; /* Keep text alignment for content */
   overflow: hidden;
 }
 
@@ -68,7 +68,9 @@ body {
 .card-back {
   transform: rotateX(180deg);
   justify-content: flex-start; /* back: top-aligned */
-  padding-top: 2rem;
+  padding: 0; /* Reset padding here, add to inner elements */
+  display: flex; /* Ensure flex container */
+  flex-direction: column; /* Stack children vertically */
 }
 
 /*----------------------------------------
@@ -93,7 +95,7 @@ body {
 }
 /* Chat UI fills back */
 #logo-card.expanded .card-back {
-  padding: 0;
+  padding: 0; /* Keep padding 0 as the content inside will have padding */
 }
 
 /*----------------
@@ -257,13 +259,16 @@ body {
 .chat-container {
   flex: 1;
   display: flex;
+  flex-direction: column; /* Stack textbook panel and chat box vertically */
   height: 100%;
   overflow: hidden;
+  /* Removed padding here, add to inner elements */
 }
 .textbook-panel {
-  flex: 1;
+  flex: 1; /* Allow textbook panel to take up available vertical space */
   padding: 2rem;
-  border-right: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0; /* Keep border */
+  overflow-y: auto; /* Add scrolling if content overflows */
 }
 .textbook-panel .placeholder {
   font-family: 'Montserrat', sans-serif;
@@ -273,14 +278,15 @@ body {
   margin-top: 2rem;
 }
 .chat-box {
-  flex: 1;
+  flex: 1; /* Allow chat box to take up available vertical space */
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Stack chat window and prompt area vertically */
+  border-left: 1px solid #e0e0e0; /* Add border to separate from textbook panel */
 }
 .chat-window {
-  flex: 1;
+  flex: 1; /* Allow chat window to take up available vertical space */
   padding: 1rem;
-  overflow-y: auto;
+  overflow-y: auto; /* Add scrolling for chat history */
 }
 .chat-bubble {
   max-width: 80%;
@@ -291,59 +297,94 @@ body {
 }
 .chat-bubble.user {
   background: #e0e0e0;
-  align-self: flex-end;
+  align-self: flex-end; /* Align user bubbles to the right */
 }
 .chat-bubble.ai {
   background: #5c6a5a;
   color: #fff;
-  align-self: flex-start;
+  align-self: flex-start; /* Align AI bubbles to the left */
 }
-.prompt-area {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  border-top: 1px solid #e0e0e0;
-  background: #fafafa;
+
+/* Style for the container of the back button and logo */
+.card-back .back-header-row {
+    display: flex; /* Use Flexbox to align items in a row */
+    align-items: center; /* Vertically align items in the center */
+    padding: 10px 1rem; /* Add padding (top/bottom 10px, left/right 1rem) */
+    gap: 10px; /* Add space between the button and the logo */
+    width: 100%; /* Ensure the header row spans the full width */
+    box-sizing: border-box; /* Include padding in the element's total width */
+    border-bottom: 1px solid #e0e0e0; /* Optional: Add a separator line */
 }
-.chat-input {
-  flex: 1;
-  resize: none;
-  height: 3rem;
-  padding: 0.75rem;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-right: 0.75rem;
+
+/* Style for the small logo in the header */
+.card-back .logo-small {
+    /* Adjust the height to be roughly the same as your back button */
+    height: 30px; /* Example: Adjust this value */
+    width: auto; /* Maintain aspect ratio */
+    /* You might need to adjust margin/padding here if needed */
 }
-.send-btn {
-  flex-shrink: 0;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
+
+/* Style for the prompt area at the bottom of the chat box */
+.prompt-area { /* Removed .card-back prefix as it's within chat-box */
+  display: flex; /* Use Flexbox to align the textarea and button in a row */
+  align-items: center; /* Vertically align items in the center */
+  padding: 1rem; /* Add padding around the input area */
+  gap: 10px; /* Add space between the textarea and the button */
+  width: 100%; /* Ensure the prompt area spans the full width */
+  box-sizing: border-box; /* Include padding in the element's total width */
+  border-top: 1px solid #e0e0e0; /* Keep border */
+  background: #fafafa; /* Keep background */
+}
+
+/* Style for the textarea (where the user types) */
+.prompt-area .chat-input { /* Removed .card-back prefix */
+  flex-grow: 1; /* This is key: tells the textarea to grow and fill available space */
+  /* Remove any fixed width or max-width that might prevent it from growing */
+  width: auto; /* Ensure it doesn't have a fixed width */
+  resize: vertical; /* Allow vertical resizing, or 'none' to disable resizing */
+  min-height: 40px; /* Ensure a minimum height */
+  padding: 8px; /* Add padding inside the textarea */
+  border: 1px solid #ccc; /* Example border */
+  border-radius: 4px; /* Example rounded corners */
+  font-family: 'Montserrat', sans-serif; /* Use your desired font */
+  font-size: 1rem; /* Example font size */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  margin-right: 0; /* Removed margin-right as gap handles spacing */
+}
+
+/* Style for the send button */
+.prompt-area .send-btn { /* Removed .card-back prefix */
+  flex-shrink: 0; /* Prevent the button from shrinking */
+  width: 3rem; /* Keep fixed width */
+  height: 3rem; /* Keep fixed height */
+  border-radius: 50%; /* Keep round shape */
   border: none;
   background: #5c6a5a;
   color: #fff;
   font-size: 1.25rem;
   cursor: pointer;
   transition: background 0.2s;
+  padding: 0; /* Reset padding if any was inherited */
 }
-.send-btn:hover {
+.send-btn:hover { /* Removed .card-back prefix */
   background: #4a554a;
 }
+
 
 /*------------------------
   BACK BUTTON (all cards)
 -------------------------*/
+/* Modified back-btn to work with the new header row */
 .back-btn {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
+  /* Removed absolute positioning */
+  /* Removed top, left properties */
   background: none;
   border: none;
-  font-size: 2rem;
-  color: #5c6a5a;
+  font-size: 2rem; /* Keep size */
+  color: #5c6a5a; /* Keep color */
   cursor: pointer;
+  flex-shrink: 0; /* Prevent shrinking */
+  padding: 0 5px; /* Add a little padding for click area */
 }
 
 /* Hide scrollbar */
