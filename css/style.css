@@ -263,12 +263,27 @@ body {
 /* Textbook panel (left half) */
 .textbook-panel {
   flex: 0 0 50%; /* Take up exactly 50% of the width */
-  padding: 2rem;
+  padding: 0; /* Changed padding to 0 here >>> Add padding to content INSIDE the panel if needed */
   border-right: 1px solid #e0e0e0; /* Keep border */
-  overflow-y: auto; /* Add scrolling if content overflows */
+  overflow: hidden; /* Changed to hidden to prevent double scrollbars >>> */
   box-sizing: border-box; /* Include padding and border in the 50% width */
+  display: flex; /* Added display: flex to make iframe fill it >>> */
+  flex-direction: column; /* Added flex-direction: column >>> */
 }
-.textbook-panel .placeholder {
+
+/* Style for the iframe inside the textbook panel */
+.textbook-panel iframe {
+    display: block; /* Ensure iframe is a block element */
+    width: 100%; /* Make it fill the width of its parent (.textbook-panel) */
+    height: 100%; /* Make it fill the height of its parent (.textbook-panel) */
+    border: none; /* Remove default iframe border */
+    /* Add padding here if you want space around the PDF content */
+    /* padding: 1rem; */
+    box-sizing: border-box; /* Include padding/border in element size */
+}
+
+
+.textbook-panel .placeholder { /* Keep placeholder style, though it's replaced by iframe */
   font-family: 'Montserrat', sans-serif;
   font-size: 1rem;
   color: #666;
