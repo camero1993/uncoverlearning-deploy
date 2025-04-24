@@ -365,7 +365,7 @@ def process_document(
     # Step 5 & 6: Generate embeddings and insert chunks into Supabase
     print("🧠 Generating embeddings and uploading chunks to Supabase...")
     for i, chunk in enumerate(chunks):
-        print(f"🔍 Processing chunk {i + 1}/{len(chunks)}...")
+        #print(f"🔍 Processing chunk {i + 1}/{len(chunks)}...")
 
         try:
             # Generate embedding for the chunk
@@ -384,7 +384,7 @@ def process_document(
             }
 
             supabase_insert("chunks", chunk_data, supabase_url, supabase_key)
-            print(f"✅ Processed and uploaded chunk {i + 1}")
+            #print(f"✅ Processed and uploaded chunk {i + 1}")
 
         except Exception as chunk_e:
             print(f"❌ Error processing chunk {i + 1}: {chunk_e}")
