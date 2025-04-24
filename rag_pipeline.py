@@ -384,7 +384,7 @@ def process_document(
             }
 
             supabase_insert("chunks", chunk_data, supabase_url, supabase_key)
-            #print(f"✅ Processed and uploaded chunk {i + 1}")
+            print(f"✅ Processed and uploaded chunk {i + 1}")
 
         except Exception as chunk_e:
             print(f"❌ Error processing chunk {i + 1}: {chunk_e}")
