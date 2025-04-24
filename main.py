@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 from typing import Annotated
 from dotenv import load_dotenv
 import io
+from pydantic import BaseModel
+from typing import Optional
 
 # Load environment variables from .env file
 load_dotenv()
@@ -97,14 +99,6 @@ async def upload_document(file: Annotated[UploadFile, File(description="PDF file
         print(f"Error processing document: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}")
 
-Okay, here is the refactored code for your @app.post("/query_document/") endpoint, updated to accept a JSON body instead of form data.
-
-You will need to place the QueryRequest class definition and the necessary imports (BaseModel, Optional) before the @app.post decorator in your file.
-
-Python
-# Add these imports at the top of your file if they aren't already there
-# from pydantic import BaseModel
-# from typing import Optional
 
 # Define the Pydantic model for the request body (place this before the endpoint definition)
 class QueryRequest(BaseModel):
