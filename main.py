@@ -12,9 +12,6 @@ from typing import Optional
 # Load environment variables from .env file
 load_dotenv()
 
-app.mount("/static", StaticFiles(directory="."), name="static") # <<< CHANGE THIS LINE
-
-
 # Import functions from your rag_pipeline.py file
 # Make sure rag_pipeline.py is in the same directory or accessible in your Python path
 try:
@@ -34,6 +31,8 @@ except ImportError:
 
 # Initialize FastAPI app
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="."), name="static") # <<< CHANGE THIS LINE
+
 
 # --- CORS Configuration ---
 # Define the origins that are allowed to make requests to your backend.
