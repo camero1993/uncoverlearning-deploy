@@ -12,10 +12,12 @@ from tqdm import tqdm
 from supabase import create_client
 import google.generativeai as genai
 from dotenv import load_dotenv
+from gcp_credentials_loader import load_gcp_credentials
 
 # Load environment variables
 load_dotenv()
 
+gcp_credentials = load_gcp_credentials()
 # Check if credentials were loaded successfully before proceeding with GCP operations
 if gcp_credentials is None:
     print("FATAL ERROR: Google Cloud credentials not loaded. Cannot proceed with GCP operations.")
