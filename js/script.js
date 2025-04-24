@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
               // IMPORTANT: Replace 'path/to/your/document.pdf' with the actual URL
               // where your backend serves the PDF file.
               // If using FastAPI StaticFiles mounted at /static, it would be like '/static/your_document_name.pdf'
-              pdfViewer.src = '/static/your_document_name.pdf'; // <<< CHANGE THIS PATH >>>
+              pdfViewer.src = '${RENDER_BACKEND_BASE_URL}/static/Psychiatric-Mental_Health_Nursing-WEB.pdf'; // <<< CHANGE THIS PATH >>>
               console.log("PDF viewer source set to:", pdfViewer.src); // Log for debugging
           }
           // -----------------------------------------------------------
