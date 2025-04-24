@@ -71,27 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatInput = document.querySelector('#logo-card .chat-input');
   const chatWin = document.querySelector('#logo-card .chat-window');
 
-  // --- Function to simulate typing animation ---
-  function typeText(element, text, delay = 20) {
-      let i = 0;
-      // Use a timer to add characters one by one
-      const timer = setInterval(() => {
-          if (i < text.length) {
-              // Append the next character to the element's innerHTML
-              // This works even with HTML tags generated from Markdown
-              element.innerHTML += text.charAt(i);
-              // Scroll to the bottom as text is added
-              chatWin.scrollTop = chatWin.scrollHeight;
-              i++;
-          } else {
-              // Clear the timer when done
-              clearInterval(timer);
-          }
-      }, delay); // Delay in milliseconds between characters
-  }
-  // -------------------------------------------
-
-
   if (sendBtn && chatInput && chatWin) {
     // Allow sending with Enter key
     chatInput.addEventListener('keypress', function(event) {
@@ -134,19 +113,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3) Render AI bubble
         const aiBubble = document.createElement('div');
         aiBubble.className = 'chat-bubble ai';
-        // Append the bubble element immediately, but it will be empty initially
+
+        // --- MODIFIED: Convert AI response (assumed Markdown) to HTML and use innerHTML ---
+        const aiResponseText = data.answer ?? 'No answer could be retrieved.';
+        // Use marked.js to convert Markdown to HTML
+        const aiResponseHTML = marked.parse(aiResponseText);
+        aiBubble.innerHTML = aiResponseHTML; // Use innerHTML to render the HTML
+        // ---------------------------------------------------------------------------------
+
         chatWin.appendChild(aiBubble);
         chatWin.scrollTop = chatWin.scrollHeight;
-
-
-        // --- MODIFIED: Convert AI response (assumed Markdown) to HTML and start typing animation ---
-        const aiResponseText = data.answer ?? 'No answer could be retrieved.';
-        // Use marked.js to convert Markdown to HTML *before* typing
-        const aiResponseHTML = marked.parse(aiResponseText);
-
-        // Start the typing animation for the AI bubble
-        typeText(aiBubble, aiResponseHTML); // Call the new function
-        // ---------------------------------------------------------------------------------------
 
       } catch (err) {
         console.error('API error:', err);
