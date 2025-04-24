@@ -16,6 +16,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Check if credentials were loaded successfully before proceeding with GCP operations
+if gcp_credentials is None:
+    print("FATAL ERROR: Google Cloud credentials not loaded. Cannot proceed with GCP operations.")
+
 # Set environment variables or manually insert them
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
