@@ -97,49 +97,89 @@ async def upload_document(file: Annotated[UploadFile, File(description="PDF file
         print(f"Error processing document: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}")
 
+Okay, here is the refactored code for your @app.post("/query_document/") endpoint, updated to accept a JSON body instead of form data.
+
+You will need to place the QueryRequest class definition and the necessary imports (BaseModel, Optional) before the @app.post decorator in your file.
+
+Python
+# Add these imports at the top of your file if they aren't already there
+# from pydantic import BaseModel
+# from typing import Optional
+
+# Define the Pydantic model for the request body (place this before the endpoint definition)
+class QueryRequest(BaseModel):
+    """
+    Represents the expected structure of the JSON request body
+    for the /query_document/ endpoint.
+    """
+    query: str # The user query is a required string
+    file_title: Optional[str] = None
+
+# Ensure Body is imported from fastapi
+# from fastapi import ..., Body # If you use the explicit Annotated[..., Body()] form
+
 @app.post("/query_document/")
-async def query_document(query: Annotated[str, Form(description="User query")], file_title: Annotated[str, Form(description="Title of the document to query")]):
+# --- MODIFIED FUNCTION SIGNATURE ---
+# Accept the request body as an instance of the QueryRequest model
+# FastAPI automatically handles reading and validating the JSON body
+async def query_document(request_body: QueryRequest):
+# Alternative (explicit Body):
+# async def query_document(request_body: Annotated[QueryRequest, Body()]):
     """
     Performs a hybrid search on the specified document based on the user query
     and generates an answer using the RAG pipeline.
     """
+    # Access the data using dot notation on the validated request_body object
+    query = request_body.query
+    file_title = request_body.file_title # This will be None if the frontend doesn't send it
+
+    # Validation checks (adjusted)
+    # Pydantic ensures 'query' is present and a string. Check for empty string if needed.
     if not query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
-    if not file_title:
-         raise HTTPException(status_code=400, detail="Document title cannot be empty.")
+
+    # The check 'if not file_title:' is removed because file_title is Optional
+    # and will correctly be None if not provided by the frontend.
+
 
     try:
         # Generate embedding for the user query
-        query_embedding = generate_gemini_embedding(query, gemini_api_key)
+        # Pass the query string from the validated body
+        query_embedding = generate_gemini_embedding(query, gemini_api_key) # Uses the 'query' variable
 
         # Perform hybrid search in Supabase
         search_results = hybrid_search(
             supabase_url=SUPABASE_URL,
             supabase_key=SUPABASE_KEY,
-            query=query,
+            query=query, # Uses the 'query' variable
             query_embedding=query_embedding,
             match_count=MATCH_COUNT,
             full_text_weight=FULL_TEXT_WEIGHT,
             semantic_weight=SEMANTIC_WEIGHT,
             rrf_k=RRF_K,
-            file_title=file_title # Pass the specific file title for filtering
+            file_title=file_title # Uses the 'file_title' variable (str or None)
         )
 
+        # The rest of the function body remains the same as it uses the
+        # standard Python variables `query` and `file_title`
+        # (and other variables like gemini_api_key, SUPABASE_URL/KEY, etc.)
+        # which are assumed to be available in this scope.
+
+        # ... rest of the function body (handling search_results,
+        # calling format_prompt_with_context and generate_gemini_response) ...
+
+        # Example of continuing:
         if not search_results:
              return JSONResponse(content={"answer": "Could not find relevant information in the specified document.", "chunks": []})
 
-
-        # Format context for the generation model
         formatted_prompt = format_prompt_with_context(search_results, query)
 
-        # Generate answer using the RAG model
         answer = generate_gemini_response(
             user_prompt=formatted_prompt,
             system_prompt="You are a helpful assistant that answers questions based on the provided document excerpts. If the information is not in the excerpts, state that you cannot answer based on the provided context.",
             gemini_api_key=gemini_api_key
         )
 
-        # Optionally, return the chunks used for context as well
         return JSONResponse(content={"answer": answer, "chunks": search_results})
 
     except Exception as e:
