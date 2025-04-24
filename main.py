@@ -36,7 +36,7 @@ app = FastAPI()
 # If you are testing locally, you might add "http://localhost:3000" or whatever port your local frontend runs on.
 # In production, AVOID using ["*"] as it allows *any* website to access your API, which is a security risk.
 origins = [
-    "https://uncoverlearning-deploy-hsye8ysgk-magnus-projects-a977a13e.vercel.app",
+    "https://uncoverlearning-deploy.vercel.app",
     # Add other Vercel deployment URLs or custom domains here if needed
     # "https://your-custom-domain.com",
     # "http://localhost:3000", # Example for local development
