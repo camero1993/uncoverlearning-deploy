@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 2) Send to backend (to the /ask endpoint)
       try {
-        const res = await fetch(`${RENDER_BACKEND_BASE_URL}/ask`, {
+        const res = await fetch(`${RENDER_BACKEND_BASE_URL}/query_document`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
