@@ -298,7 +298,9 @@ def format_prompt_with_context(search_results: list, user_query: str) -> str:
 
     context_text = "\\n\\n".join(context_sections) # Use double newline for better separation
 
-    prompt = f"""You are a helpful assistant answering questions based on the following document excerpts.
+    prompt = f"""You are a course based chat bot tutor for college students. 
+    You will answer student prompts with information exclusively found in the uploaded document. 
+    Craft answers to student questions that guide their learning, rather than simply providing the information of the answer, like a good tutor would.
 Each excerpt is marked with '---File: [file_name], Chunk Position: [position]---' before the content.
 
 {context_text}
