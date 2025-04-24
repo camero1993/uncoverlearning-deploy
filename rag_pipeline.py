@@ -369,7 +369,7 @@ def process_document(
 
         try:
             # Generate embedding for the chunk
-            embedding = generate_gemini_embedding(chunk, model, gemini_api_key)
+            embedding = generate_gemini_embedding(chunk, gemini_api_key)
 
             # Insert chunk data into Supabase 'chunks' table
             chunk_data = {
