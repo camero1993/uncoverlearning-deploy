@@ -52,10 +52,8 @@ body {
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   background: #ffffff;
   display: flex;
-  flex-direction: column;
-  /* Removed align-items: center; and justify-content: center; from shared styles
-     as card-back needs flex-start alignment for its content */
-  padding: 1rem; /* Keep base padding */
+  flex-direction: column; /* Stack header and main content area vertically */
+  padding: 0; /* Reset padding here, add to inner elements */
   text-align: center; /* Keep text alignment for content */
   overflow: hidden;
 }
@@ -67,10 +65,7 @@ body {
 /* Back panel starts flipped */
 .card-back {
   transform: rotateX(180deg);
-  justify-content: flex-start; /* back: top-aligned */
-  padding: 0; /* Reset padding here, add to inner elements */
-  display: flex; /* Ensure flex container */
-  flex-direction: column; /* Stack children vertically */
+  justify-content: flex-start; /* Align content to the top */
 }
 
 /*----------------------------------------
@@ -256,19 +251,22 @@ body {
 /*---------------------
    Chatbot Tutor UI
 ----------------------*/
+/* Container for the two main panels (textbook and chat) */
 .chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column; /* Stack textbook panel and chat box vertically */
-  height: 100%;
+  flex: 1; /* Allow chat-container to fill the vertical space below the header */
+  display: flex; /* Use Flexbox */
+  flex-direction: row; /* Arrange children (panels) in a row */
+  height: 100%; /* Ensure it takes full height of its parent (.card-back) */
   overflow: hidden;
-  /* Removed padding here, add to inner elements */
 }
+
+/* Textbook panel (left half) */
 .textbook-panel {
-  flex: 1; /* Allow textbook panel to take up available vertical space */
+  flex: 0 0 50%; /* Take up exactly 50% of the width */
   padding: 2rem;
   border-right: 1px solid #e0e0e0; /* Keep border */
   overflow-y: auto; /* Add scrolling if content overflows */
+  box-sizing: border-box; /* Include padding and border in the 50% width */
 }
 .textbook-panel .placeholder {
   font-family: 'Montserrat', sans-serif;
@@ -277,14 +275,17 @@ body {
   text-align: center;
   margin-top: 2rem;
 }
+
+/* Chat box panel (right half) */
 .chat-box {
-  flex: 1; /* Allow chat box to take up available vertical space */
+  flex: 0 0 50%; /* Take up exactly 50% of the width */
   display: flex;
   flex-direction: column; /* Stack chat window and prompt area vertically */
-  border-left: 1px solid #e0e0e0; /* Add border to separate from textbook panel */
+  /* Removed border-left here as border-right is on the other panel */
+  box-sizing: border-box; /* Include padding in the 50% width */
 }
 .chat-window {
-  flex: 1; /* Allow chat window to take up available vertical space */
+  flex: 1; /* Allow chat window to take up available vertical space above prompt */
   padding: 1rem;
   overflow-y: auto; /* Add scrolling for chat history */
 }
@@ -314,6 +315,7 @@ body {
     width: 100%; /* Ensure the header row spans the full width */
     box-sizing: border-box; /* Include padding in the element's total width */
     border-bottom: 1px solid #e0e0e0; /* Optional: Add a separator line */
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 /* Style for the small logo in the header */
@@ -325,19 +327,20 @@ body {
 }
 
 /* Style for the prompt area at the bottom of the chat box */
-.prompt-area { /* Removed .card-back prefix as it's within chat-box */
+.prompt-area {
   display: flex; /* Use Flexbox to align the textarea and button in a row */
   align-items: center; /* Vertically align items in the center */
   padding: 1rem; /* Add padding around the input area */
   gap: 10px; /* Add space between the textarea and the button */
-  width: 100%; /* Ensure the prompt area spans the full width */
+  width: 100%; /* Ensure the prompt area spans the full width of its parent (.chat-box) */
   box-sizing: border-box; /* Include padding in the element's total width */
   border-top: 1px solid #e0e0e0; /* Keep border */
   background: #fafafa; /* Keep background */
+  flex-shrink: 0; /* Prevent prompt area from shrinking */
 }
 
 /* Style for the textarea (where the user types) */
-.prompt-area .chat-input { /* Removed .card-back prefix */
+.prompt-area .chat-input {
   flex-grow: 1; /* This is key: tells the textarea to grow and fill available space */
   /* Remove any fixed width or max-width that might prevent it from growing */
   width: auto; /* Ensure it doesn't have a fixed width */
@@ -353,7 +356,7 @@ body {
 }
 
 /* Style for the send button */
-.prompt-area .send-btn { /* Removed .card-back prefix */
+.prompt-area .send-btn {
   flex-shrink: 0; /* Prevent the button from shrinking */
   width: 3rem; /* Keep fixed width */
   height: 3rem; /* Keep fixed height */
@@ -366,7 +369,7 @@ body {
   transition: background 0.2s;
   padding: 0; /* Reset padding if any was inherited */
 }
-.send-btn:hover { /* Removed .card-back prefix */
+.send-btn:hover {
   background: #4a554a;
 }
 
