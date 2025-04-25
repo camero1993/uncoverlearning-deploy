@@ -3,7 +3,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 from fastapi.staticfiles import StaticFiles # Import StaticFiles
-from typing import Annotated
+from typing import Annotated, Optional, List, Dict, Any
 from dotenv import load_dotenv
 import io
 from pydantic import BaseModel
