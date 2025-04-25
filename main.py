@@ -103,88 +103,73 @@ async def upload_document(file: Annotated[UploadFile, File(description="PDF file
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}")
 
 
-# Define the Pydantic model for the request body (place this before the endpoint definition)
 class QueryRequest(BaseModel):
     """
     Represents the expected structure of the JSON request body
     for the /query_document/ endpoint.
     """
+    query: str # The user query is a required string
+    file_title: Optional[str] = None # The file_title is an optional string
+    # --- NEW: Field for conversation history ---
+    history: List[Dict[str, Any]] = [] # List of message objects { role: 'user' | 'model', parts: '...' }
+    # --- REMOVED: Incorrect line referencing request_body ---
+    # query = request_body.query # <--- REMOVE THIS LINE
+    # -----------------------------------------------------
+
+@app.post("/query_document/")
+# Accept the request body as an instance of the QueryRequest model
+# FastAPI automatically handles reading and validating the JSON body
+async def query_document(request_body: QueryRequest):
+# Alternative (explicit Body):
+# async def query_document(request_body: Annotated[QueryRequest, Body()]):
+    """
+    Performs a hybrid search on a HARDCODED document based on the user query
+    and conversation history.
+    """
     # Get data from the request body
-    query = request_body.query
+    query = request_body.query # Access query from the request_body instance here
     conversation_history = request_body.history # Get the history from the request
 
     if not query:
          raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
-# Ensure Body is imported from fastapi
-# from fastapi import ..., Body # If you use the explicit Annotated[..., Body()] form
-
-@app.post("/query_document/")
-async def query_document(request_body: QueryRequest): # Keep accepting the standard body structure
-    """
-    Performs a hybrid search on a HARDCODED document based on the user query.
-    (Temporarily ignores file_title from the request).
-    """
-    # Get the query from the request body (this is needed for the search)
-    query = request_body.query
-
-    # You still receive request_body.file_title, but we will ignore its value for the search filtering below.
-    # file_title_from_request = request_body.file_title # You can keep this line or comment it out
-
-    if not query:
-         raise HTTPException(status_code=400, detail="Query cannot be empty.")
-
     # --- HARDCODE THE DOCUMENT IDENTIFIER HERE ---
-    # IMPORTANT: Replace "Enter the Exact Title of Your Target Document Here"
-    # with the *actual* title (or fileId, depending on what your hybrid_search expects for filtering)
-    # of the document you want to query from your Supabase table.
-    hardcoded_file_identifier = "test1" # <<< CHANGE THIS STRING
-
-    # If your hybrid_search expects the fileId instead of the title, use that here:
-    # hardcoded_file_identifier = "Your Actual Hardcoded Document ID" # <<< Or the ID string
-
+    # Replace "test1" with the *actual* title (or fileId) of your target document.
+    hardcoded_file_identifier = "test1" # <<< CHANGE THIS STRING to your desired document title >>>
     # ---------------------------------------------
 
-    # --- Set the variable used for the search to the hardcoded value ---
-    # This overrides any value that might have come in from the frontend request body.
+    # Use the hardcoded value directly for the search filter
     file_title_for_search = hardcoded_file_identifier
-    # The previous logic 'file_title_for_search = file_title_from_request if file_title_from_request is not None else ""'
-    # is effectively bypassed or replaced by the line above when hardcoding is active.
-    # ---------------------------------------------------------------------
-
 
     try:
-        # Generate embedding for the user query (uses the query from the frontend)
-        query_embedding = generate_gemini_embedding(query, gemini_api_key) # gemini_api_key must be available
+        # Generate embedding for the user query
+        query_embedding = generate_gemini_embedding(query, gemini_api_key)
 
-        # Perform hybrid search in Supabase
+        # Perform hybrid search in Supabase using the hardcoded file title
         search_results = hybrid_search(
-            supabase_url=SUPABASE_URL, # SUPABASE_URL and KEY must be available
+            supabase_url=SUPABASE_URL,
             supabase_key=SUPABASE_KEY,
             query=query, # Pass the query from the frontend
             query_embedding=query_embedding,
-            match_count=MATCH_COUNT, # Config variables must be available
+            match_count=MATCH_COUNT,
             full_text_weight=FULL_TEXT_WEIGHT,
             semantic_weight=SEMANTIC_WEIGHT,
             rrf_k=RRF_K,
-            # --- Pass the hardcoded identifier to hybrid_search ---
-            file_title=file_title_for_search # <<< Use the variable that holds the hardcoded value
-            # Make sure the parameter name 'file_title' matches what hybrid_search expects for filtering
-            # (Based on your hybrid_search code, 'file_title' is correct)
-            # -------------------------------------------------------------------------
+            file_title=file_title_for_search # Use the hardcoded variable
         )
-
-        # ... rest of your query_document function body (handling search_results,
-        # calling format_prompt_with_context and generate_gemini_response) ...
 
         if not search_results:
              return JSONResponse(content={"answer": "Could not find relevant information in the specified document.", "chunks": []})
 
-        formatted_prompt = format_prompt_with_context(search_results, query)
+        # --- MODIFIED: Format prompt including conversation history ---
+        # Pass the history to the prompt formatting function
+        formatted_prompt = format_prompt_with_context(search_results, query, conversation_history)
+        # ------------------------------------------------------------
 
+        # Generate answer using the RAG model
         answer = generate_gemini_response(
             user_prompt=formatted_prompt,
-            system_prompt="You are a helpful assistant that answers questions based on the provided document excerpts. If the information is not in the excerpts, state that you cannot answer based on the provided context.",
+            system_prompt="You are a helpful assistant that answers questions based on the provided document excerpts and the conversation history. If the information needed to answer the question is not present in the excerpts or history, state that you cannot answer based on the provided context.",
             gemini_api_key=gemini_api_key
         )
 
