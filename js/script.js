@@ -43,7 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
               pdfViewer.src = ''; // Clear the iframe source
               console.log("PDF viewer source cleared."); // Log for debugging
           }
-          // -----------------------------------------
+          // --- Clear conversation history when closing chat ---
+          conversationHistory = []; // Reset history
+          console.log("Conversation history cleared.");
+          // ---------------------------------------------------
         });
       }
     } else {
@@ -72,16 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatWin = document.querySelector('#logo-card .chat-window');
   // Search input and message storage elements are not yet fully implemented
   // const chatSearchInput = document.querySelector('#logo-card .chat-search-input');
-  // const chatMessages = [];
+  // const chatMessages = []; // This array is no longer needed for history, but keep if used for search filtering
+
+  // --- NEW: Conversation History Array ---
+  let conversationHistory = []; // Array to store message objects { role: 'user' | 'model', parts: '...' }
+  // Use 'role' and 'parts' to match Gemini API format if needed later
+  // ---------------------------------------
 
 
-  // --- REMOVED: Character typing animation function ---
-  // function typeText(element, text, delay = 20) { ... }
-  // ----------------------------------------------------
-
-
-  // --- NEW: Function to fade in blocks of text ---
-  function fadeInBlocks(containerElement, htmlContent, blockDelay = 100, fadeDuration = 500) {
+  // --- Function to fade in blocks of text ---
+  function fadeInBlocks(containerElement, htmlContent, blockDelay = 100, fadeDuration = 500, onComplete = () => {}) {
       // Create a temporary div to parse the HTML content
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlContent;
@@ -113,10 +116,26 @@ document.addEventListener('DOMContentLoaded', () => {
                  // Scroll to the bottom as blocks fade in
                  chatWin.scrollTop = chatWin.scrollHeight;
               }
+
+              // Call onComplete after the last block has started fading
+              if (index === blocks.length - 1) {
+                  // Add a small delay after the last block starts fading before calling onComplete
+                  setTimeout(onComplete, fadeDuration);
+              }
+
           }, blockDelay * (index + 1)); // Delay each block's fade by blockDelay * its index
       });
+
+      // If there are no blocks, call onComplete immediately
+      if (blocks.length === 0) {
+          onComplete();
+      }
   }
   // -----------------------------------------------
+
+  // --- Function to filter chat messages (Keep if implementing search) ---
+  // function filterChatMessages(query) { ... }
+  // --------------------------------------------------------------------
 
 
   if (sendBtn && chatInput && chatWin) {
@@ -132,6 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = chatInput.value.trim();
       if (!query) return;
 
+      // Disable input and button while processing
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+
       // 1) Render user bubble
       const userBubble = document.createElement('div');
       userBubble.className = 'chat-bubble user';
@@ -139,6 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
       chatWin.appendChild(userBubble);
       chatWin.scrollTop = chatWin.scrollHeight;
       chatInput.value = ''; // Clear input after sending
+
+      // --- Store user message in history ---
+      // Store the raw text, not the HTML bubble element
+      conversationHistory.push({ role: 'user', parts: query });
+      // -------------------------------------
 
       // 2) Send to backend (to the /query_document endpoint)
       try {
@@ -148,6 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({
             query: query,
             // file_title is hardcoded in the backend for now
+            // --- NEW: Include conversation history in the request body ---
+            history: conversationHistory // Send the history array
+            // -----------------------------------------------------------
           }),
         });
 
@@ -166,15 +197,24 @@ document.addEventListener('DOMContentLoaded', () => {
         chatWin.scrollTop = chatWin.scrollHeight;
 
 
-        // --- MODIFIED: Convert AI response (assumed Markdown) to HTML and start fade-in animation ---
+        // --- Convert AI response (assumed Markdown) to HTML and start fade-in animation ---
         const aiResponseText = data.answer ?? 'No answer could be retrieved.';
-        // Use marked.js to convert Markdown to HTML
+        // Use marked.js to convert Markdown to HTML *before* typing
         const aiResponseHTML = marked.parse(aiResponseText);
 
         // Start the fade-in animation for the AI bubble's content
         // Fade in each block with 100ms delay between blocks, and each fade takes 500ms
-        fadeInBlocks(aiBubble, aiResponseHTML, 100, 500); // Call the new function
-        // -----------------------------------------------------------------------------------------
+        fadeInBlocks(aiBubble, aiResponseHTML, 100, 500, () => {
+            // --- Store AI message in history AFTER typing is complete ---
+            // Store the raw text response from the backend
+            conversationHistory.push({ role: 'model', parts: aiResponseText });
+            console.log("Conversation history updated:", conversationHistory);
+            // Re-enable input and button after animation
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.focus(); // Put focus back on the input
+        });
+        // ---------------------------------------------------------------------------------
 
       } catch (err) {
         console.error('API error:', err);
@@ -183,6 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
         errBubble.textContent = `Error fetching answer: ${err.message || err}`;
         chatWin.appendChild(errBubble);
         chatWin.scrollTop = chatWin.scrollHeight;
+
+        // Re-enable input and button on error
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
       }
     });
   }
