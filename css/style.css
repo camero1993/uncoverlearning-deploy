@@ -54,7 +54,7 @@ body {
   display: flex;
   flex-direction: column; /* Stack header and main content area vertically */
   padding: 0; /* Reset padding here, add to inner elements */
-  text-align: center; /* Keep text alignment for content */
+  /* Removed text-align: center; from shared styles */
   overflow: hidden;
 }
 
@@ -310,8 +310,11 @@ body {
   padding: 0.75rem 1rem;
   border-radius: 12px;
   line-height: 1.4;
+  /* --- ADDED: Left-justify text inside the bubble --- */
   text-align: left;
+  /* -------------------------------------------------- */
 }
+
 .chat-bubble.user {
   background: #e0e0e0;
   align-self: flex-end; /* Align user bubbles to the right */
