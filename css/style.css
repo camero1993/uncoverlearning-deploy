@@ -360,7 +360,7 @@ body {
 /* Style for the small logo in the header */
 .card-back .logo-small {
     /* Adjust the height to be roughly the same as your back button */
-    height: 30px; /* Example: Adjust this value */
+    height: 60px; /* Example: Adjust this value */
     width: auto; /* Maintain aspect ratio */
     /* You might need to adjust margin/padding here if needed */
 }
