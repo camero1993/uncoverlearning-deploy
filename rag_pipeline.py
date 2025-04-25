@@ -284,33 +284,65 @@ def hybrid_search(
         raise
 
 
-def format_prompt_with_context(search_results: list, user_query: str) -> str:
-    """Formats the retrieved chunks and user query into a prompt for the LLM."""
+def format_prompt_with_context(search_results: list, user_query: str, history: List[Dict[str, Any]]) -> str:
+    """
+    Formats the retrieved chunks, conversation history, and user query
+    into a prompt for the LLM with an enhanced tutor persona.
+    """
     context_sections = []
 
     for i, result in enumerate(search_results):
-        # Adjust this field name if your Supabase rows use something else for chunk text
-        # The key 'extractedText' is assumed based on the processing function
         content = result.get("extractedText", "")
-        # Include file title and position for better context attribution
         file_info = f"File: {result.get('originalName', 'Unknown File')}, Chunk Position: {result.get('position', 'Unknown')}"
         context_sections.append(f"---{file_info}---\n{content.strip()}")
 
-    context_text = "\\n\\n".join(context_sections) # Use double newline for better separation
+    context_text = "\n\n".join(context_sections) # Use double newline for better separation
 
-    prompt = f"""You are a course based chat bot tutor for college students. 
-    You will answer student prompts with information exclusively found in the uploaded document. 
-    Craft answers to student questions that guide their learning, rather than simply providing the information of the answer, like a good tutor would.
-    Break up your answers into clear paragraphs (including a full blank line in between each one) and bullets for maximized readability. Take on a kind, peer-to-peer tutor personality.
-Each excerpt is marked with '---File: [file_name], Chunk Position: [position]---' before the content.
+    # --- Format conversation history ---
+    # Format history into a string that the LLM can understand as previous turns.
+    # Use 'role' and 'parts' from the history objects sent by the frontend.
+    history_text = ""
+    if history:
+        history_text = "Conversation History:\n"
+        # Iterate through history in the order it happened
+        for turn in history:
+            role = turn.get('role', 'unknown') # 'user' or 'model'
+            parts = turn.get('parts', '') # The message content
 
+            # Basic formatting for history turns
+            if role == 'user':
+                history_text += f"User: {parts}\n"
+            elif role == 'model':
+                 # If the model response was Markdown, include the raw text or simplified version
+                 # Including raw text is often fine for LLMs to understand the flow
+                 history_text += f"Model: {parts}\n"
+            else:
+                 history_text += f"Unknown: {parts}\n"
+        history_text += "---\n\n" # Separator after history
+
+
+    # --- Construct the final prompt with enhanced instructions ---
+    prompt = f"""You are a kind, peer-to-peer chat bot tutor for college students, focused on helping them understand the provided document.
+Your primary goal is to guide the student's learning based *only* on the information found in the document excerpts and the conversation history.
+Do not provide information from outside the document.
+
+When answering:
+- Explain concepts clearly and break down complex ideas.
+- Provide examples from the document or create simple illustrative examples when helpful.
+- Craft answers that guide the student's understanding, rather than just giving direct answers.
+- If the information needed to answer the question is not present in the excerpts or history, state that you cannot answer based on the provided context.
+- If the user's question is unclear or could refer to multiple concepts in the document/history, ask a clarifying question to understand exactly what they are asking about.
+- Maintain a friendly, approachable, peer-to-peer tone throughout.
+- Break up your answers into clear paragraphs (including a full blank line in between each one) and use bullets for lists to maximize readability.
+
+{history_text}
+
+Document Excerpts:
 {context_text}
 
 ---
 
-Based on the above document excerpts, please answer the following question.
-If the information needed to answer the question is not present in the excerpts,
-please state that you cannot answer based on the provided context.
+Based on the above document excerpts and conversation history, please answer the following question.
 
 Question: {user_query}
 """
