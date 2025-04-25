@@ -109,8 +109,12 @@ class QueryRequest(BaseModel):
     Represents the expected structure of the JSON request body
     for the /query_document/ endpoint.
     """
-    query: str # The user query is a required string
-    file_title: Optional[str] = None
+    # Get data from the request body
+    query = request_body.query
+    conversation_history = request_body.history # Get the history from the request
+
+    if not query:
+         raise HTTPException(status_code=400, detail="Query cannot be empty.")
 
 # Ensure Body is imported from fastapi
 # from fastapi import ..., Body # If you use the explicit Annotated[..., Body()] form
