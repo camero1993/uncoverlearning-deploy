@@ -54,7 +54,9 @@ body {
   display: flex;
   flex-direction: column; /* Stack header and main content area vertically */
   padding: 0; /* Reset padding here, add to inner elements */
-  /* Removed text-align: center; from shared styles */
+  /* --- REMOVED: text-align: center; from shared styles --- */
+  /* text-align: center; */
+  /* ------------------------------------------------------- */
   overflow: hidden;
 }
 
@@ -67,6 +69,13 @@ body {
   transform: rotateX(180deg);
   justify-content: flex-start; /* Align content to the top */
 }
+
+/* --- ADDED: Center align text on the front of all cards --- */
+.card-front {
+    text-align: center;
+}
+/* --------------------------------------------------------- */
+
 
 /*----------------------------------------
    LOGO CARD: EXPAND WITHOUT ANIMATION
@@ -160,6 +169,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Added text-align to center stats text if needed */
+  text-align: center;
 }
 .stats-row {
   display: flex;
@@ -173,7 +184,7 @@ body {
 }
 .stat-text {
   font-size: 1rem;
-  text-align: left;
+  text-align: left; /* Keep stat text left aligned relative to number */
 }
 
 /*--------------------
@@ -182,7 +193,7 @@ body {
 .mission-list {
   list-style: disc inside;
   margin-top: 1rem;
-  text-align: left;
+  text-align: left; /* Keep list items left aligned */
   font-size: 1rem;
 }
 
@@ -195,6 +206,8 @@ body {
   align-items: center;
   gap: 1.5rem;
   margin-top: 1rem;
+  /* Added text-align to center team info if needed */
+  text-align: center;
 }
 .team-member {
   display: flex;
@@ -246,6 +259,7 @@ body {
   font-weight: 400;
   font-size: 1rem;
   margin-top: 1rem;
+  text-align: center; /* Center align contact text */
 }
 
 /*---------------------
@@ -269,6 +283,9 @@ body {
   box-sizing: border-box; /* Include padding and border in the 50% width */
   display: flex; /* Added display: flex to make iframe fill it >>> */
   flex-direction: column; /* Added flex-direction: column >>> */
+  /* --- ADDED: Left align text within the textbook panel --- */
+  text-align: left;
+  /* ------------------------------------------------------- */
 }
 
 /* Style for the iframe inside the textbook panel */
@@ -287,7 +304,7 @@ body {
   font-family: 'Montserrat', sans-serif;
   font-size: 1rem;
   color: #666;
-  text-align: center;
+  text-align: center; /* Keep placeholder text centered */
   margin-top: 2rem;
 }
 
@@ -298,6 +315,9 @@ body {
   flex-direction: column; /* Stack chat window and prompt area vertically */
   /* Removed border-left here as border-right is on the other panel */
   box-sizing: border-box; /* Include padding in the 50% width */
+  /* --- ADDED: Left align text within the chat box --- */
+  text-align: left;
+  /* -------------------------------------------------- */
 }
 .chat-window {
   flex: 1; /* Allow chat window to take up available vertical space above prompt */
@@ -311,7 +331,7 @@ body {
   border-radius: 12px;
   line-height: 1.4;
   /* --- ADDED: Left-justify text inside the bubble --- */
-  text-align: left;
+  text-align: left; /* This was already here, but confirmed */
   /* -------------------------------------------------- */
 }
 
