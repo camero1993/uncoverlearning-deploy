@@ -36,15 +36,10 @@ app.mount("/static", StaticFiles(directory="."), name="static") # <<< CHANGE THI
 
 # --- CORS Configuration ---
 # Define the origins that are allowed to make requests to your backend.
-# IMPORTANT: Replace the URL below with the actual URL(s) of your Vercel frontend deployment(s).
-# If you have a custom domain, include that as well.
-# If you are testing locally, you might add "http://localhost:3000" or whatever port your local frontend runs on.
-# In production, AVOID using ["*"] as it allows *any* website to access your API, which is a security risk.
 origins = [
-    "https://uncoverlearning-deploy.vercel.app"
-    # Add other Vercel deployment URLs or custom domains here if needed
-    # "https://your-custom-domain.com",
-    # "http://localhost:3000", # Example for local development
+    "https://uncoverlearning-deploy.vercel.app",  # Production Vercel deployment
+    "http://localhost:3000",                      # React development server
+    "http://127.0.0.1:3000"                       # Alternative localhost
 ]
 
 app.add_middleware(
