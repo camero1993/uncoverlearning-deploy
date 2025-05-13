@@ -1,14 +1,28 @@
-requests
-pydantic
-google-cloud-storage
-PyMuPDF
-pytesseract
-Pillow
-tqdm
-supabase
-google-generativeai
-python-multipart
-python-dotenv
-fastapi  # Keep if you plan to use FastAPI for your web framework
-uvicorn  # Keep if you plan to use Uvicorn to run your FastAPI app
-httpx    # Keep as it's a dependency for some libraries
+fastapi==0.109.2
+uvicorn==0.27.1
+python-multipart==0.0.9
+python-dotenv==1.0.1
+pydantic==2.6.1
+requests==2.31.0
+httpx==0.26.0
+
+# Google Cloud
+google-cloud-storage==2.14.0
+google-generativeai==0.3.2
+
+# Document Processing
+PyMuPDF==1.23.26
+pytesseract==0.3.10
+Pillow==10.2.0
+tqdm==4.66.2
+
+# Database
+supabase==2.3.4
+
+# LangChain
+langchain==0.1.9
+langchain-google-genai==0.0.5
+langchain-community==0.0.13
+langchain-core==0.1.10
+langchain-text-splitters==0.0.1
+langchain-google-vertexai==0.0.1
