@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.app_settings import settings
 from src.api.routes import api_router
+# from src.infrastructure.vector_store.langchain_vector_store import LangChainVectorStore  # Old import
+from src.infrastructure.vector_store.supabase_store import LangChainVectorStore  # Updated import
 
 # Create FastAPI app
 app = FastAPI(
