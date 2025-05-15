@@ -1,34 +1,33 @@
-httpx>=0.26.0,<0.29.0
-supabase>=2.15.0
-
 # Core Framework
-fastapi>=0.109.2,<0.110.0
-uvicorn>=0.27.1,<0.28.0
-starlette>=0.36.3,<0.37.0
+fastapi==0.109.2
+uvicorn==0.27.1
+starlette>=0.27.0
 pydantic>=2.0,<3.0
-python-multipart>=0.0.9,<0.1.0
-python-dotenv>=1.0.1,<1.1.0
+python-multipart==0.0.9
+python-dotenv==1.0.1
 
 # HTTP and Requests
-requests>=2.31.0,<2.32.0
+requests==2.31.0
+httpx>=0.24.0,<0.26.0  # Required by supabase
 
 # Google Cloud
-google-cloud-storage>=2.14.0,<3.0.0
-google-generativeai>=0.3.2,<0.4.0
+google-cloud-storage==2.14.0
+google-generativeai==0.3.2
 
 # Document Processing
-PyMuPDF>=1.23.26,<1.24.0
-pytesseract>=0.3.10,<0.4.0
-Pillow>=10.2.0,<11.0.0
-tqdm>=4.66.2,<5.0.0
+PyMuPDF==1.23.26
+pytesseract==0.3.10
+Pillow==10.2.0
+tqdm==4.66.2
 
 # Database
-postgrest>0.19,<1.1
+supabase==2.3.4
+postgrest>=0.10.0,<0.11.0  # Required by supabase
 
 # LangChain Ecosystem
-langchain>=0.1.16,<0.2.0
-langchain-community==0.3.24
-langchain-core>=0.3.59,<1.0.0
-langchain-text-splitters>=0.0.1,<0.1.0
-langchain-google-genai>=0.0.5,<0.1.0
-langchain-google-vertexai>=0.0.1,<0.1.0
+langchain==0.1.9
+langchain-community>=0.0.21,<0.1.0  # Required by langchain
+langchain-core>=0.1.0  # Required by langchain
+langchain-text-splitters>=0.0.1  # Required by langchain
+langchain-google-genai==0.0.5
+langchain-google-vertexai==0.0.1
