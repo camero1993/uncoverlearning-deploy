@@ -109,6 +109,7 @@ const HiddenInput = styled.input`
 const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [fileTitle, setFileTitle] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prevent background scroll when overlay is open
@@ -124,11 +125,30 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
       setUploadStatus('Uploading...');
+      
       try {
-        await uploadDocument(file, file.name);
+        console.log('Uploading document:', file.name);
+        const result = await uploadDocument(file, file.name);
+        console.log('Upload result:', result);
+        
+        setFileTitle(file.name);
         setUploadStatus('Document uploaded and processing started!');
-      } catch (err) {
-        setUploadStatus('Failed to upload document.');
+      } catch (err: any) {
+        console.error('Upload error:', err);
+        // Enhanced error reporting
+        let errorMessage = 'Failed to upload document.';
+        
+        if (err.response) {
+          console.error('Server response:', err.response.data);
+          // Add server error details if available
+          if (err.response.data && err.response.data.detail) {
+            errorMessage = `Server Error: ${err.response.data.detail}`;
+          } else {
+            errorMessage = `Server Error (${err.response.status}): Failed to process document`;
+          }
+        }
+        
+        setUploadStatus(errorMessage);
       }
     }
   };
@@ -163,7 +183,7 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
           )}
         </PdfPanel>
         <ChatPanel>
-          <Chat isOpen={true} onClose={onCollapse} />
+          <Chat isOpen={true} onClose={onCollapse} fileTitle={fileTitle} />
         </ChatPanel>
       </Main>
     </Overlay>

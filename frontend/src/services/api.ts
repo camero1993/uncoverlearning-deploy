@@ -27,18 +27,40 @@ export const uploadDocument = async (file: File, filename: string): Promise<any>
   formData.append('original_name', filename);
 
   console.log(`uploadDocument: POSTing to ${API_BASE_URL}/api/documents/upload_document/`);
-  const response = await api.post('/api/documents/upload_document/', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data;
+  try {
+    const response = await api.post('/api/documents/upload_document/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log('Upload successful, response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Upload error details:', {
+      message: error.message,
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      } : 'No response',
+      request: error.request ? 'Request was made but no response received' : 'No request was made'
+    });
+    throw error;
+  }
 };
 
-export const queryDocument = async (query: string): Promise<Message> => {
-  console.log(`queryDocument: POSTing to ${API_BASE_URL}/api/queries/query_document/`);
-  const response = await api.post('/api/queries/query_document/', { query });
-  return response.data;
+export const queryDocument = async (query: string, file_title?: string): Promise<Message> => {
+  console.log(`queryDocument: POSTing to ${API_BASE_URL}/api/queries/query_document/ with`, { query, file_title });
+  
+  const response = await api.post('/api/queries/query_document/', { 
+    query,
+    file_title: file_title || null
+  });
+  
+  return {
+    role: 'assistant',
+    content: response.data.answer
+  };
 };
 
 export const getChatHistory = async (): Promise<Message[]> => {
