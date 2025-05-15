@@ -329,11 +329,11 @@ const App: React.FC = () => {
               </h4>
               <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '1rem', color: '#000' }}>
                 Technical Co-Founder
-              </p>
-              <a 
+        </p>
+        <a
                 href="https://www.linkedin.com/in/magnus-graham/" 
-                target="_blank" 
-                rel="noopener noreferrer"
+          target="_blank"
+          rel="noopener noreferrer"
                 style={{ 
                   fontFamily: 'Montserrat, sans-serif',
                   fontSize: '1rem',
@@ -456,7 +456,7 @@ const App: React.FC = () => {
             <p>
               Together, we can make education more accessible and effective for everyone.
             </p>
-          </div>
+    </div>
         </>
       )
     }

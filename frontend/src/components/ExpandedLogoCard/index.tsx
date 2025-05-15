@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import Chat from '../Chat';
+import { uploadDocument } from '../../services/api';
 
 interface ExpandedLogoCardProps {
   onCollapse: () => void;
@@ -107,6 +108,7 @@ const HiddenInput = styled.input`
 
 const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prevent background scroll when overlay is open
@@ -116,11 +118,18 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
     return () => { document.body.style.overflow = originalStyle; };
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
+      setUploadStatus('Uploading...');
+      try {
+        await uploadDocument(file, file.name);
+        setUploadStatus('Document uploaded and processing started!');
+      } catch (err) {
+        setUploadStatus('Failed to upload document.');
+      }
     }
   };
 
@@ -144,9 +153,13 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
                   onChange={handleFileChange}
                 />
               </UploadButton>
+              {uploadStatus && <div style={{ marginTop: '1rem', color: '#5c6a5a' }}>{uploadStatus}</div>}
             </>
           ) : (
-            <PdfIframe src={pdfUrl} title="PDF Viewer" />
+            <>
+              <PdfIframe src={pdfUrl} title="PDF Viewer" />
+              {uploadStatus && <div style={{ position: 'absolute', bottom: 16, left: 16, color: '#5c6a5a', background: '#fff', padding: '0.5rem 1rem', borderRadius: 6 }}>{uploadStatus}</div>}
+            </>
           )}
         </PdfPanel>
         <ChatPanel>

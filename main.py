@@ -5,29 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 from fastapi.staticfiles import StaticFiles # Import StaticFiles
 from typing import Annotated, Optional, List, Dict, Any
 from dotenv import load_dotenv
-import io
 from pydantic import BaseModel
-from typing import Optional
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Import functions from your rag_pipeline.py file
-# Make sure rag_pipeline.py is in the same directory or accessible in your Python path
-try:
-    from rag_pipeline import (
-        process_document,
-        generate_gemini_embedding,
-        hybrid_search,
-        format_prompt_with_context,
-        generate_gemini_response,
-        SUPABASE_URL,
-        SUPABASE_KEY,
-        GCP_BUCKET,
-        gemini_api_key
-    )
-except ImportError:
-    raise ImportError("Could not import functions from rag_pipeline.py. Ensure the file exists and is in the correct path.")
+# Import LangChain components
+from src.infrastructure.vector_store.langchain_vector_store import LangChainVectorStore
+from src.infrastructure.rag.langchain_rag_chain import LangChainRAGChain
+from src.infrastructure.document_processing.langchain_processor import LangChainDocumentProcessor
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -52,6 +38,10 @@ app.add_middleware(
 
 # --- Configuration (can be moved to .env or config file) ---
 # Get configuration from environment variables loaded by dotenv
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+GCP_BUCKET = os.getenv("BUCKET")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SUPABASE_TABLE = os.getenv("SUPABASE_TABLE", "files") # Default to 'files' if not set
 GCP_DESTINATION_FOLDER = os.getenv("GCP_DESTINATION_FOLDER", "uploaded_docs") # Default folder in GCP
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 1000)) # Default chunk size
@@ -64,36 +54,97 @@ FULL_TEXT_WEIGHT = float(os.getenv("FULL_TEXT_WEIGHT", 1.0))
 SEMANTIC_WEIGHT = float(os.getenv("SEMANTIC_WEIGHT", 1.0))
 RRF_K = int(os.getenv("RRF_K", 50))
 
+# Initialize components
+vector_store = LangChainVectorStore(
+    supabase_url=SUPABASE_URL,
+    supabase_key=SUPABASE_KEY,
+    gemini_api_key=GEMINI_API_KEY,
+    table_name=SUPABASE_TABLE
+)
+
+document_processor = LangChainDocumentProcessor(
+    chunk_size=CHUNK_SIZE,
+    gemini_api_key=GEMINI_API_KEY
+)
+
+rag_chain = LangChainRAGChain(
+    vector_store=vector_store,
+    gemini_api_key=GEMINI_API_KEY,
+    model_name=GENERATION_MODEL
+)
+
 # --- API Endpoints ---
 
 @app.post("/upload_document/")
-async def upload_document(file: Annotated[UploadFile, File(description="PDF file to process")], original_name: Annotated[str, Form(description="Name to save the document as")]):
+async def upload_document(
+    file: Annotated[UploadFile, File(description="PDF file to process")],
+    original_name: Annotated[str, Form(description="Name to save the document as")]
+):
     """
-    Uploads a PDF document, processes it (extracts text, chunks, embeds),
+    Uploads a PDF document, processes it using LangChain components,
     and stores the data in Supabase and GCP.
     """
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
 
-    # Read file content
-    file_content = await file.read()
-
-    # Process the document using the pipeline function
     try:
-        processing_output = process_document(
-            buffer=file_content,
-            original_name=original_name,
-            supabase_table=SUPABASE_TABLE,
-            supabase_url=SUPABASE_URL,
-            supabase_key=SUPABASE_KEY,
-            chunk_size=CHUNK_SIZE,
-            destination=GCP_DESTINATION_FOLDER,
-            model=EMBEDDING_MODEL,
-            gemini_api_key=gemini_api_key
-        )
-        return JSONResponse(content={"message": "Document processed successfully", "details": processing_output})
+        # Read file content
+        file_content = await file.read()
+        
+        # Save to temporary file for processing
+        temp_file = f"/tmp/{file.filename}"
+        with open(temp_file, "wb") as f:
+            f.write(file_content)
+        
+        try:
+            # Process document using LangChain
+            documents = document_processor.process_pdf(pdf_path=temp_file)
+            
+            # Generate embeddings
+            embeddings = document_processor.generate_embeddings(documents)
+            
+            # Upload to GCP and get URL
+            gcp_url = vector_store.upload_to_gcp(
+                buffer=file_content,
+                filename=file.filename,
+                destination=GCP_DESTINATION_FOLDER
+            )
+            
+            # Insert file metadata
+            file_id = vector_store.insert_file_metadata(
+                title=original_name,
+                link=gcp_url
+            )
+            
+            # Add documents to vector store
+            metadata_list = [
+                {
+                    "id": f"{file_id}_chunk_{i}",
+                    "fileId": file_id,
+                    "position": i,
+                    "originalName": original_name,
+                    "downloadUrl": gcp_url
+                }
+                for i in range(len(documents))
+            ]
+            
+            vector_store.add_documents(documents, metadata_list)
+            
+            return JSONResponse(content={
+                "message": "Document processed successfully",
+                "details": {
+                    "file_url": gcp_url,
+                    "file_id": file_id,
+                    "total_chunks": len(documents)
+                }
+            })
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                
     except Exception as e:
-        # Log the error for debugging
         print(f"Error processing document: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process document: {e}")
 
@@ -105,72 +156,38 @@ class QueryRequest(BaseModel):
     """
     query: str # The user query is a required string
     file_title: Optional[str] = None # The file_title is an optional string
-    # --- NEW: Field for conversation history ---
-    history: List[Dict[str, Any]] = [] # List of message objects { role: 'user' | 'model', parts: '...' }
-    # --- REMOVED: Incorrect line referencing request_body ---
-    # query = request_body.query # <--- REMOVE THIS LINE
-    # -----------------------------------------------------
+    conversation_history: Optional[List[Dict[str, Any]]] = None
 
 @app.post("/query_document/")
 # Accept the request body as an instance of the QueryRequest model
 # FastAPI automatically handles reading and validating the JSON body
-async def query_document(request_body: QueryRequest):
+async def query_document(request: QueryRequest):
 # Alternative (explicit Body):
 # async def query_document(request_body: Annotated[QueryRequest, Body()]):
     """
-    Performs a hybrid search on a HARDCODED document based on the user query
-    and conversation history.
+    Query the RAG pipeline with a question and optional file title.
     """
-    # Get data from the request body
-    query = request_body.query # Access query from the request_body instance here
-    conversation_history = request_body.history # Get the history from the request
-
-    if not query:
-         raise HTTPException(status_code=400, detail="Query cannot be empty.")
-
-    # --- HARDCODE THE DOCUMENT IDENTIFIER HERE ---
-    # Replace "test1" with the *actual* title (or fileId) of your target document.
-    hardcoded_file_identifier = "test1" # <<< CHANGE THIS STRING to your desired document title >>>
-    # ---------------------------------------------
-
-    # Use the hardcoded value directly for the search filter
-    file_title_for_search = hardcoded_file_identifier
-
     try:
-        # Generate embedding for the user query
-        query_embedding = generate_gemini_embedding(query, gemini_api_key)
-
-        # Perform hybrid search in Supabase using the hardcoded file title
-        search_results = hybrid_search(
-            supabase_url=SUPABASE_URL,
-            supabase_key=SUPABASE_KEY,
-            query=query, # Pass the query from the frontend
-            query_embedding=query_embedding,
-            match_count=MATCH_COUNT,
-            full_text_weight=FULL_TEXT_WEIGHT,
-            semantic_weight=SEMANTIC_WEIGHT,
-            rrf_k=RRF_K,
-            file_title=file_title_for_search # Use the hardcoded variable
+        # Query the RAG chain
+        response = rag_chain.query(
+            question=request.query,
+            file_title=request.file_title
         )
-
-        if not search_results:
-             return JSONResponse(content={"answer": "Could not find relevant information in the specified document.", "chunks": []})
-
-        # --- MODIFIED: Format prompt including conversation history ---
-        # Pass the history to the prompt formatting function
-        formatted_prompt = format_prompt_with_context(search_results, query, conversation_history)
-        # ------------------------------------------------------------
-
-        # Generate answer using the RAG model
-        answer = generate_gemini_response(
-            user_prompt=formatted_prompt,
-            system_prompt="You are a helpful assistant that answers questions based on the provided document excerpts and the conversation history. If the information needed to answer the question is not present in the excerpts or history, state that you cannot answer based on the provided context.",
-            gemini_api_key=gemini_api_key
-        )
-
-        return JSONResponse(content={"answer": answer, "chunks": search_results})
-
-
+        
+        return JSONResponse(content={
+            "answer": response["answer"],
+            "chunks": [
+                {
+                    "id": doc.metadata["id"],
+                    "fileId": doc.metadata["fileId"],
+                    "position": doc.metadata["position"],
+                    "extractedText": doc.page_content,
+                    "originalName": doc.metadata["originalName"],
+                    "downloadUrl": doc.metadata["downloadUrl"]
+                }
+                for doc in response["source_documents"]
+            ]
+        })
     except Exception as e:
         print(f"Error during query processing: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to process query: {e}")

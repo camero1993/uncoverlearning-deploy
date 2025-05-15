@@ -14,16 +14,17 @@ export interface Message {
   content: string;
 }
 
-export const uploadDocument = async (file: File, filename: string): Promise<void> => {
+export const uploadDocument = async (file: File, filename: string): Promise<any> => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('filename', filename);
+  formData.append('original_name', filename);
 
-  await api.post('/upload', formData, {
+  const response = await api.post('/documents/upload_document/', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
+  return response.data;
 };
 
 export const queryDocument = async (query: string): Promise<Message> => {
