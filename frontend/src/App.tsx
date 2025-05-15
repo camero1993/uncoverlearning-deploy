@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import FlashcardContainer from './components/FlashcardContainer';
-import Chat from './components/Chat';
+// import Chat from './components/Chat'; // Removed unused import
 import ExpandedLogoCard from './components/ExpandedLogoCard';
 import { FlashcardData } from './types';
 

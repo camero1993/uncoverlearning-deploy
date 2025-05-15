@@ -76,26 +76,6 @@ const ContentWrapper = styled.div`
   margin: 0 auto;
 `;
 
-const Title = styled.h3`
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  color: #5c6a5a;
-  text-transform: lowercase;
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
-`;
-
-const Description = styled.p`
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 400;
-  font-size: 1.5rem;
-  color: #000;
-  margin-bottom: 1.5rem;
-  line-height: 1.4;
-  max-width: 600px;
-`;
-
 const MissionText = styled.h1`
   font-family: 'Fraunces', serif;
   font-weight: 600;
