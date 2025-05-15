@@ -1,3 +1,6 @@
+httpx>=0.24.0,<0.26.0
+supabase==2.3.4
+
 # Core Framework
 fastapi==0.109.2
 uvicorn==0.27.1
@@ -8,7 +11,6 @@ python-dotenv==1.0.1
 
 # HTTP and Requests
 requests==2.31.0
-httpx>=0.24.0,<0.26.0  # Required by supabase
 
 # Google Cloud
 google-cloud-storage==2.14.0
@@ -21,7 +23,6 @@ Pillow==10.2.0
 tqdm==4.66.2
 
 # Database
-supabase==2.3.4
 postgrest>=0.10.0,<0.11.0  # Required by supabase
 
 # LangChain Ecosystem
