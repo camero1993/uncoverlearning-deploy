@@ -109,7 +109,6 @@ const HiddenInput = styled.input`
 const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const [documentTitle, setDocumentTitle] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prevent background scroll when overlay is open
@@ -125,8 +124,6 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
       const url = URL.createObjectURL(file);
       setPdfUrl(url);
       setUploadStatus('Uploading...');
-      setDocumentTitle(file.name);
-      
       try {
         await uploadDocument(file, file.name);
         setUploadStatus('Document uploaded and processing started!');
@@ -166,7 +163,7 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
           )}
         </PdfPanel>
         <ChatPanel>
-          <Chat isOpen={true} onClose={onCollapse} fileTitle={documentTitle || undefined} />
+          <Chat isOpen={true} onClose={onCollapse} />
         </ChatPanel>
       </Main>
     </Overlay>

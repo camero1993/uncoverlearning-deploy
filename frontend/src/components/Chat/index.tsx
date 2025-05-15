@@ -5,7 +5,6 @@ import { queryDocument, getChatHistory, clearChatHistory, Message } from '../../
 interface ChatProps {
   onClose: () => void;
   isOpen: boolean;
-  fileTitle?: string;
 }
 
 const Container = styled.div<{ isOpen: boolean }>`
@@ -153,7 +152,7 @@ const LoadingIndicator = styled.div`
   }
 `;
 
-const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
+const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -175,7 +174,6 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
       setMessages(history);
     } catch (error) {
       console.error('Failed to load chat history:', error);
-      setMessages([]);
     }
   };
 
@@ -193,7 +191,7 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
     setIsLoading(true);
 
     try {
-      const response = await queryDocument(input.trim(), fileTitle);
+      const response = await queryDocument(input.trim());
       setMessages(prev => [...prev, response]);
     } catch (error) {
       console.error('Failed to send message:', error);

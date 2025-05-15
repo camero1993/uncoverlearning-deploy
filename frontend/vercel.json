@@ -20,22 +20,7 @@
     },
     {
       "src": "/manifest.json",
-      "dest": "/manifest.json",
-      "headers": {
-        "Cache-Control": "public, max-age=0, must-revalidate"
-      }
-    },
-    {
-      "src": "/logo192.png",
-      "dest": "/logo192.png"
-    },
-    {
-      "src": "/logo512.png",
-      "dest": "/logo512.png"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "/robots.txt"
+      "dest": "/manifest.json"
     },
     {
       "src": "/(.*)",
