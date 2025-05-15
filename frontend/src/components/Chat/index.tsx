@@ -170,10 +170,40 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
 
   const loadChatHistory = async () => {
     try {
+      console.log('loadChatHistory: Attempting to load chat history');
       const history = await getChatHistory();
-      setMessages(history);
-    } catch (error) {
-      console.error('Failed to load chat history:', error);
+      console.log('loadChatHistory: Successfully loaded history', history);
+      
+      // If history is empty, add a welcome message
+      if (history.length === 0) {
+        setMessages([{ 
+          role: 'assistant', 
+          content: 'Welcome! How can I help you with your document today?' 
+        }]);
+      } else {
+        setMessages(history);
+      }
+    } catch (error: any) {
+      console.error('Failed to load chat history. Details:', error);
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+        console.error('Error response headers:', error.response.headers);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('Error request:', error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error('Error message:', error.message);
+      }
+      
+      // Handle error gracefully by showing a welcome message instead
+      setMessages([{ 
+        role: 'assistant', 
+        content: 'Welcome! How can I help you with your document today?' 
+      }]);
     }
   };
 
