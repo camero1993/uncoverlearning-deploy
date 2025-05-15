@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from src.infrastructure.vector_store.langchain_vector_store import LangChainVectorStore
+from src.infrastructure.vector_store.supabase_store import LangChainVectorStore
 import os
 from dotenv import load_dotenv
 

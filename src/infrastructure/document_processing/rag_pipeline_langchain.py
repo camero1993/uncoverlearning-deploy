@@ -6,7 +6,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from gcp_credentials_loader import load_gcp_credentials
 from src.infrastructure.document_processing.langchain_processor import LangChainDocumentProcessor
-from src.infrastructure.vector_store.langchain_vector_store import LangChainVectorStore
+from src.infrastructure.vector_store.supabase_store import LangChainVectorStore
 
 # Load environment variables
 load_dotenv()
