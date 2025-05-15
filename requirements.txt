@@ -7,8 +7,8 @@ python-multipart==0.0.9
 python-dotenv==1.0.1
 
 # HTTP and Requests
+httpx==0.24.1
 requests==2.31.0
-httpx>=0.24.0,<0.26.0  # Required by supabase
 
 # Google Cloud
 google-cloud-storage==2.14.0
@@ -22,7 +22,7 @@ tqdm==4.66.2
 
 # Database
 supabase==2.3.4
-postgrest>=0.10.0,<0.11.0  # Required by supabase
+postgrest==0.10.8
 
 # LangChain Ecosystem
 langchain==0.1.9
