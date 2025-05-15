@@ -20,9 +20,7 @@ class LangChainVectorStore:
         supabase_url: Optional[str] = None,
         supabase_key: Optional[str] = None,
         gemini_api_key: Optional[str] = None,
-        table_name: str = "chunks",
-        embedding_column: str = "embedding",
-        text_column: str = "extractedText"
+        table_name: str = "chunks"
     ):
         """
         Initialize the vector store.
@@ -32,8 +30,6 @@ class LangChainVectorStore:
             supabase_key: Supabase API key
             gemini_api_key: Google Gemini API key
             table_name: Name of the table storing vectors
-            embedding_column: Name of the column storing embeddings
-            text_column: Name of the column storing text content
         """
         self.supabase_url = supabase_url or os.getenv("SUPABASE_URL")
         self.supabase_key = supabase_key or os.getenv("SUPABASE_KEY")
@@ -55,10 +51,10 @@ class LangChainVectorStore:
         # Initialize vector store
         self.vector_store = SupabaseVectorStore(
             client=self.supabase,
-            table_name=table_name,
             embedding=self.embeddings,
-            embedding_column=embedding_column,
-            text_column=text_column
+            table_name=table_name,
+            query_name="match_documents",
+            content_column="extractedText"
         )
     
     def upload_to_gcp(self, buffer: bytes, filename: str, destination: str) -> str:
