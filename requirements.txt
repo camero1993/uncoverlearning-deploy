@@ -7,7 +7,7 @@ python-multipart==0.0.9
 python-dotenv==1.0.1
 
 # HTTP and Requests
-httpx>=0.26.0,<0.29.0  # Required by supabase 2.15.1
+httpx==0.24.1
 requests==2.31.0
 
 # Google Cloud
@@ -21,8 +21,8 @@ Pillow==10.2.0
 tqdm==4.66.2
 
 # Database
-supabase==2.15.1  # Latest stable version
-postgrest>0.19,<1.1  # Required by supabase 2.15.1
+supabase==2.3.4
+postgrest==0.10.8
 
 # LangChain Ecosystem
 langchain==0.1.9
