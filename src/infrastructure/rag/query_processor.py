@@ -56,7 +56,7 @@ class LangChainRAGChain:
     def _create_rag_chain(self) -> ConversationalRetrievalChain:
         """Create the RAG chain with conversation memory."""
         # Create the prompt template
-        prompt = ChatPromptTemplate.from_messages([
+        qa_prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a kind, peer-to-peer chat bot tutor for college students, focused on helping them understand the provided document.
 Your primary goal is to guide the student's learning based *only* on the information found in the document excerpts and the conversation history.
 Do not provide information from outside the document.
@@ -70,10 +70,12 @@ When answering:
 - Maintain a friendly, approachable, peer-to-peer tone throughout.
 - Break up your answers into clear paragraphs (including a full blank line in between each one) and use bullets for lists to maximize readability."""),
             MessagesPlaceholder(variable_name="chat_history"),
-            ("human", "{question}")
+            ("human", "{question}"),
+            ("human", "Context: {context}")
         ])
         
         # Create the chain
+        # Note: Use chain_type="stuff" with our custom prompt instead of passing combine_docs_chain directly
         chain = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=self.vector_store.vector_store.as_retriever(
@@ -81,7 +83,9 @@ When answering:
                 search_kwargs={"k": 10}
             ),
             memory=self.memory,
-            combine_docs_chain=prompt | self.llm | StrOutputParser(),
+            combine_docs_chain_kwargs={
+                "prompt": qa_prompt
+            },
             return_source_documents=True,
             return_generated_question=False
         )
