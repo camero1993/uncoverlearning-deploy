@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import Chat from '../Chat';
-import { uploadDocument } from '../../services/api';
+import { uploadDocument, UploadProgressInfo } from '../../services/api';
 
 interface ExpandedLogoCardProps {
   onCollapse: () => void;
@@ -85,6 +85,42 @@ const UploadButton = styled.label`
   cursor: pointer;
   transition: background 0.2s;
   &:hover { background: #4a5649; }
+  &:disabled, &[disabled] {
+    background: #a0a0a0;
+    cursor: not-allowed;
+  }
+`;
+
+const ErrorContainer = styled.div`
+  margin-top: 1rem;
+  color: #d32f2f;
+  font-family: 'Montserrat', sans-serif;
+  max-width: 400px;
+  text-align: center;
+`;
+
+const StatusContainer = styled.div`
+  margin-top: 1rem;
+  color: #5c6a5a;
+  font-family: 'Montserrat', sans-serif;
+  max-width: 400px;
+  text-align: center;
+`;
+
+const ProgressContainer = styled.div`
+  width: 300px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 1rem 0;
+`;
+
+const ProgressBar = styled.div<{ width: number }>`
+  height: 100%;
+  background: #5c6a5a;
+  width: ${props => props.width}%;
+  transition: width 0.3s ease;
 `;
 
 const PdfIframe = styled.iframe`
@@ -109,7 +145,10 @@ const HiddenInput = styled.input`
 const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [fileTitle, setFileTitle] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [progress, setProgress] = useState<UploadProgressInfo | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Prevent background scroll when overlay is open
@@ -120,36 +159,96 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
   }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Reset states
+    setUploadError(null);
+    setUploadStatus(null);
+    setProgress(null);
+    
     const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
-      setUploadStatus('Uploading...');
+    
+    // Validate file is present
+    if (!file) {
+      setUploadError('No file selected.');
+      return;
+    }
+    
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      setUploadError('Only PDF files are allowed.');
+      return;
+    }
+    
+    // Create object URL for preview
+    const url = URL.createObjectURL(file);
+    setPdfUrl(url);
+    setUploadStatus('Preparing upload...');
+    setIsUploading(true);
+    
+    try {
+      console.log('Uploading document:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
       
-      try {
-        console.log('Uploading document:', file.name);
-        const result = await uploadDocument(file, file.name);
-        console.log('Upload result:', result);
+      // Upload with progress tracking
+      const result = await uploadDocument(
+        file, 
+        file.name,
+        (progressInfo) => {
+          setProgress(progressInfo);
+          
+          // Update status based on the stage
+          switch (progressInfo.stage) {
+            case 'preparing':
+              setUploadStatus(`Preparing upload: ${progressInfo.message}`);
+              break;
+            case 'uploading':
+              setUploadStatus(`Uploading: ${progressInfo.percentage}%`);
+              break;
+            case 'processing':
+              setUploadStatus('Processing document...');
+              break;
+            case 'complete':
+              setUploadStatus('Document uploaded successfully! You can now ask questions about it.');
+              break;
+          }
+        }
+      );
+      
+      console.log('Upload result:', result);
+      
+      setFileTitle(file.name);
+      setIsUploading(false);
+      setUploadStatus('Document uploaded and processed! You can now ask questions about it.');
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setIsUploading(false);
+      
+      // Enhanced error reporting with detailed categorization
+      let errorMessage = 'Failed to upload document: Unknown error.';
+      
+      if (err.response) {
+        // Server responded with error
+        console.error('Server response:', err.response.data);
         
-        setFileTitle(file.name);
-        setUploadStatus('Document uploaded and processing started!');
-      } catch (err: any) {
-        console.error('Upload error:', err);
-        // Enhanced error reporting
-        let errorMessage = 'Failed to upload document.';
-        
-        if (err.response) {
-          console.error('Server response:', err.response.data);
-          // Add server error details if available
+        if (err.response.status === 413) {
+          errorMessage = `File is too large for the server to process. Please try a smaller file.`;
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          errorMessage = 'Not authorized to upload files.';
+        } else if (err.response.status >= 500) {
           if (err.response.data && err.response.data.detail) {
             errorMessage = `Server Error: ${err.response.data.detail}`;
           } else {
-            errorMessage = `Server Error (${err.response.status}): Failed to process document`;
+            errorMessage = `Server Error (${err.response.status}): The server encountered an error processing your document.`;
           }
         }
-        
-        setUploadStatus(errorMessage);
+      } else if (err.request) {
+        // Request made but no response received
+        errorMessage = 'No response from server. Please check your internet connection.';
+      } else if (err.message) {
+        // Other error
+        errorMessage = `${err.message}`;
       }
+      
+      setUploadError(errorMessage);
+      setUploadStatus(null);
     }
   };
 
@@ -164,21 +263,61 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
         <PdfPanel>
           {!pdfUrl ? (
             <>
-              <UploadButton htmlFor="pdf-upload">Upload your document
-                <HiddenInput
-                  id="pdf-upload"
-                  type="file"
-                  accept="application/pdf"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                />
-              </UploadButton>
-              {uploadStatus && <div style={{ marginTop: '1rem', color: '#5c6a5a' }}>{uploadStatus}</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <UploadButton 
+                  htmlFor="pdf-upload" 
+                  style={{ 
+                    opacity: isUploading ? 0.6 : 1, 
+                    pointerEvents: isUploading ? 'none' : 'auto' 
+                  }}
+                >
+                  {isUploading ? 'Uploading...' : 'Upload your document'}
+                  <HiddenInput
+                    id="pdf-upload"
+                    type="file"
+                    accept="application/pdf"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    disabled={isUploading}
+                  />
+                </UploadButton>
+                
+                {progress && (
+                  <div style={{ marginTop: '1rem', width: '300px' }}>
+                    <ProgressContainer>
+                      <ProgressBar width={progress.percentage} />
+                    </ProgressContainer>
+                    <div style={{ fontSize: '0.8rem', textAlign: 'center' }}>
+                      {progress.message}
+                    </div>
+                  </div>
+                )}
+                
+                {uploadError && <ErrorContainer>{uploadError}</ErrorContainer>}
+                {uploadStatus && !progress && <StatusContainer>{uploadStatus}</StatusContainer>}
+                
+                <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#777' }}>
+                  Files larger than 10MB will be uploaded in chunks
+                </div>
+              </div>
             </>
           ) : (
             <>
               <PdfIframe src={pdfUrl} title="PDF Viewer" />
-              {uploadStatus && <div style={{ position: 'absolute', bottom: 16, left: 16, color: '#5c6a5a', background: '#fff', padding: '0.5rem 1rem', borderRadius: 6 }}>{uploadStatus}</div>}
+              
+              {progress && (
+                <div style={{ position: 'absolute', bottom: 16, right: 16, background: '#fff', padding: '0.5rem 1rem', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <ProgressContainer style={{ width: '200px' }}>
+                    <ProgressBar width={progress.percentage} />
+                  </ProgressContainer>
+                  <div style={{ fontSize: '0.8rem', textAlign: 'center' }}>
+                    {progress.message}
+                  </div>
+                </div>
+              )}
+              
+              {uploadError && <div style={{ position: 'absolute', bottom: 16, left: 16, color: '#d32f2f', background: '#fff', padding: '0.5rem 1rem', borderRadius: 6 }}>{uploadError}</div>}
+              {uploadStatus && !progress && <div style={{ position: 'absolute', bottom: 16, left: 16, color: '#5c6a5a', background: '#fff', padding: '0.5rem 1rem', borderRadius: 6 }}>{uploadStatus}</div>}
             </>
           )}
         </PdfPanel>
