@@ -48,16 +48,127 @@ export interface UploadProgressInfo {
 
 type ProgressCallback = (progress: UploadProgressInfo) => void;
 
-/**
- * Upload a file using the chunked upload API for large files
- */
+// Simple direct upload (for files under 10MB)
+const uploadSingleFile = async (
+  file: File, 
+  filename: string, 
+  onProgress?: ProgressCallback
+): Promise<any> => {
+  // Create form data
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('original_name', filename);
+
+  console.log(`uploadSingleFile: POSTing to ${API_BASE_URL}/api/documents/upload_document/`);
+  console.log(`File details: Name=${filename}, Size=${(file.size / 1024 / 1024).toFixed(2)}MB, Type=${file.type}`);
+  
+  onProgress?.({
+    loaded: 0,
+    total: file.size,
+    percentage: 0,
+    stage: 'uploading',
+    message: 'Starting upload...'
+  });
+  
+  try {
+    const response = await api.post('/api/documents/upload_document/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 60000, // 60 seconds timeout for uploads
+      onUploadProgress: (progressEvent) => {
+        const loaded = progressEvent.loaded;
+        const total = progressEvent.total || file.size;
+        const percentage = Math.round((loaded * 100) / total);
+        
+        console.log(`Upload progress: ${percentage}%`);
+        
+        onProgress?.({
+          loaded,
+          total,
+          percentage,
+          stage: 'uploading',
+          message: `Uploading: ${percentage}%`
+        });
+      }
+    });
+    
+    console.log('Upload successful, response:', response.data);
+    
+    onProgress?.({
+      loaded: file.size,
+      total: file.size,
+      percentage: 100,
+      stage: 'complete',
+      message: 'Upload complete'
+    });
+    
+    return response.data;
+  } catch (error: any) {
+    // Check for 413 error with suggestion for chunked upload
+    if (error.response?.status === 413 && error.response?.data?.suggestion) {
+      console.log('File too large for direct upload, will try chunked upload');
+      throw new Error('CHUNKED_UPLOAD_REQUIRED');
+    }
+    
+    console.error('Upload error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data
+      } : 'No response'
+    });
+    
+    throw error;
+  }
+};
+
+// Configuration for chunked uploads
+const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
+// Helper function to add delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Function to upload a single chunk with retry logic
+const uploadChunkWithRetry = async (
+  uploadId: string,
+  chunkIndex: number,
+  totalChunks: number,
+  chunkData: string,
+  retryCount = 0
+): Promise<any> => {
+  try {
+    return await api.post('/api/documents/upload_chunk/', {
+      upload_id: uploadId,
+      chunk_index: chunkIndex,
+      total_chunks: totalChunks,
+      chunk_data: chunkData
+    });
+  } catch (error: any) {
+    // If we haven't exceeded max retries, try again
+    if (retryCount < MAX_RETRY_ATTEMPTS) {
+      console.log(`Chunk ${chunkIndex + 1}/${totalChunks} upload failed, retrying (${retryCount + 1}/${MAX_RETRY_ATTEMPTS})...`);
+      await delay(RETRY_DELAY);
+      return uploadChunkWithRetry(uploadId, chunkIndex, totalChunks, chunkData, retryCount + 1);
+    }
+    
+    // Otherwise, throw the error
+    console.error(`Failed to upload chunk ${chunkIndex + 1} after ${MAX_RETRY_ATTEMPTS} attempts`);
+    throw error;
+  }
+};
+
+// Chunked upload for larger files
 const uploadChunkedFile = async (
   file: File, 
   filename: string, 
   onProgress?: ProgressCallback
 ): Promise<any> => {
-  // Configuration
-  const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB chunks
+  // Calculate chunks
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   
   console.log(`Starting chunked upload for ${filename}`);
@@ -78,7 +189,7 @@ const uploadChunkedFile = async (
       file_name: filename,
       total_chunks: totalChunks,
       total_size: file.size,
-      mime_type: 'application/pdf'
+      mime_type: file.type
     });
     
     const uploadId = initResponse.data.upload_id;
@@ -93,38 +204,49 @@ const uploadChunkedFile = async (
       const end = Math.min(start + CHUNK_SIZE, file.size);
       const chunk = file.slice(start, end);
       
+      // Show preparing stage for large files with many chunks
+      if (chunkIndex === 0) {
+        onProgress?.({
+          loaded: 0,
+          total: file.size,
+          percentage: 0,
+          stage: 'uploading',
+          message: `Starting to upload ${totalChunks} chunks...`
+        });
+      }
+      
       // Read chunk as ArrayBuffer and convert to Base64
       const arrayBuffer = await chunk.arrayBuffer();
-      const binary = new Uint8Array(arrayBuffer);
-      let binaryString = '';
-      for (let i = 0; i < binary.byteLength; i++) {
-        binaryString += String.fromCharCode(binary[i]);
-      }
-      const base64Chunk = btoa(binaryString);
+      const base64Chunk = arrayBufferToBase64(arrayBuffer);
       
-      // Upload chunk
+      // Upload chunk with retry logic
       console.log(`Uploading chunk ${chunkIndex + 1}/${totalChunks}`);
-      const chunkResponse = await api.post('/api/documents/upload_chunk/', {
-        upload_id: uploadId,
-        chunk_index: chunkIndex,
-        total_chunks: totalChunks,
-        chunk_data: base64Chunk
-      });
-      
-      // Update progress
-      uploadedBytes += chunk.size;
-      uploadedChunks++;
-      const percentage = Math.round((uploadedBytes * 100) / file.size);
-      
-      console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded. Total progress: ${percentage}%`);
-      
-      onProgress?.({
-        loaded: uploadedBytes,
-        total: file.size,
-        percentage,
-        stage: 'uploading',
-        message: `Uploading chunk ${uploadedChunks}/${totalChunks}: ${percentage}%`
-      });
+      try {
+        const chunkResponse = await uploadChunkWithRetry(
+          uploadId,
+          chunkIndex,
+          totalChunks,
+          base64Chunk
+        );
+        
+        // Update progress
+        uploadedBytes += chunk.size;
+        uploadedChunks++;
+        const percentage = Math.round((uploadedBytes * 100) / file.size);
+        
+        console.log(`Chunk ${chunkIndex + 1}/${totalChunks} uploaded. Total progress: ${percentage}%`);
+        
+        onProgress?.({
+          loaded: uploadedBytes,
+          total: file.size,
+          percentage,
+          stage: 'uploading',
+          message: `Uploading chunk ${uploadedChunks}/${totalChunks}: ${percentage}%`
+        });
+      } catch (error) {
+        console.error(`Error uploading chunk ${chunkIndex + 1}/${totalChunks}:`, error);
+        throw new Error(`Failed to upload chunk ${chunkIndex + 1}/${totalChunks}`);
+      }
     }
     
     // Step 3: Finalize upload
@@ -156,113 +278,46 @@ const uploadChunkedFile = async (
     return finalizeResponse.data;
   } catch (error: any) {
     console.error('Chunked upload error:', error);
-    
-    // Detailed error logging
-    console.error('Chunked upload error details:', {
-      name: error.name,
-      message: error.message,
-      response: error.response ? {
-        status: error.response.status,
-        data: error.response.data
-      } : 'No response'
-    });
-    
     throw error;
   }
 };
 
-export const uploadDocument = async (file: File, filename: string, onProgress?: ProgressCallback): Promise<any> => {
-  // Create form data
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('original_name', filename);
-
-  // For files larger than 10MB, use chunked upload
-  if (file.size > 10 * 1024 * 1024) {
-    console.log(`File is larger than 10MB (${(file.size / 1024 / 1024).toFixed(2)}MB), using chunked upload`);
-    return uploadChunkedFile(file, filename, onProgress);
+// Helper function to convert ArrayBuffer to Base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const binary = new Uint8Array(buffer);
+  let binaryString = '';
+  for (let i = 0; i < binary.byteLength; i++) {
+    binaryString += String.fromCharCode(binary[i]);
   }
+  return btoa(binaryString);
+}
 
-  console.log(`Regular upload: POSTing to ${API_BASE_URL}/api/documents/upload_document/`);
-  console.log(`File details: Name=${filename}, Size=${(file.size / 1024 / 1024).toFixed(2)}MB, Type=${file.type}`);
-  
-  onProgress?.({
-    loaded: 0,
-    total: file.size,
-    percentage: 0,
-    stage: 'uploading',
-    message: 'Starting upload...'
-  });
+// Main upload function that chooses the appropriate method based on file size
+export const uploadDocument = async (
+  file: File, 
+  filename: string, 
+  onProgress?: ProgressCallback
+): Promise<any> => {
+  const MAX_DIRECT_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
   
   try {
-    // Set timeout for large files to prevent hanging requests
-    const response = await api.post('/api/documents/upload_document/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      timeout: 60000, // 60 seconds timeout for uploads
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || file.size));
-        console.log(`Upload progress: ${percentCompleted}%`);
-        
-        onProgress?.({
-          loaded: progressEvent.loaded,
-          total: progressEvent.total || file.size,
-          percentage: percentCompleted,
-          stage: 'uploading',
-          message: `Uploading: ${percentCompleted}%`
-        });
-      }
-    });
+    // For larger files, use chunked upload
+    if (file.size > MAX_DIRECT_UPLOAD_SIZE) {
+      console.log(`File is larger than ${MAX_DIRECT_UPLOAD_SIZE / (1024 * 1024)}MB, using chunked upload`);
+      return await uploadChunkedFile(file, filename, onProgress);
+    }
     
-    console.log('Upload successful, response:', response.data);
-    
-    onProgress?.({
-      loaded: file.size,
-      total: file.size,
-      percentage: 100,
-      stage: 'complete',
-      message: 'Upload complete'
-    });
-    
-    return response.data;
+    // For smaller files, use direct upload
+    console.log(`File is smaller than ${MAX_DIRECT_UPLOAD_SIZE / (1024 * 1024)}MB, using direct upload`);
+    return await uploadSingleFile(file, filename, onProgress);
   } catch (error: any) {
-    // Check for 413 error with suggestion for chunked upload
-    if (error.response?.status === 413 && error.response?.data?.suggestion) {
-      console.log('File too large for direct upload, switching to chunked upload');
-      return uploadChunkedFile(file, filename, onProgress);
+    // If direct upload fails with a specific error, try chunked upload
+    if (error.message === 'CHUNKED_UPLOAD_REQUIRED') {
+      console.log('Switching to chunked upload after receiving 413 error');
+      return await uploadChunkedFile(file, filename, onProgress);
     }
     
-    // Detailed error categorization and logging
-    if (error.code === 'ECONNABORTED') {
-      console.error('Upload timeout: Request took too long to complete');
-    }
-    
-    console.error('Upload error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack,
-      response: error.response ? {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers
-      } : 'No response',
-      request: error.request ? 'Request was made but no response received' : 'No request was made',
-      config: error.config ? {
-        url: error.config.url,
-        method: error.config.method,
-        timeout: error.config.timeout,
-        headers: error.config.headers
-      } : 'No config'
-    });
-    
-    // Rethrow with enhanced message for timeout case
-    if (error.code === 'ECONNABORTED') {
-      throw new Error('Upload timed out. The file may be too large or the server is too busy.');
-    }
-    
+    // Otherwise, pass through the error
     throw error;
   }
 };

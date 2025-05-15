@@ -16,6 +16,7 @@ import shutil
 import base64
 import json
 from pathlib import Path
+import threading
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -68,43 +69,83 @@ except Exception as e:
     logger.error(traceback.format_exc())
     raise
 
-# Default max file size (10MB for single upload)
+# Set max file size to 10MB
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 MAX_FILE_SIZE_MB = MAX_FILE_SIZE / (1024 * 1024)
 
 # Dictionary to store chunked upload sessions
-# In a production environment, use a database or Redis for persistent storage
+# In a production environment, this would be stored in a database
 chunked_uploads = {}
+
+# Helper function to clean up expired upload sessions
+def cleanup_expired_uploads():
+    """
+    Removes expired upload sessions and cleans up temporary files
+    """
+    now = time.time()
+    expired_ids = []
+    
+    for upload_id, session in chunked_uploads.items():
+        # Check if session has expired
+        if session.get("expires_at", 0) < now:
+            expired_ids.append(upload_id)
+            request_id = session.get("request_id", "unknown")
+            temp_dir = session.get("temp_dir")
+            
+            # Clean up temporary files
+            if temp_dir and os.path.exists(temp_dir):
+                try:
+                    shutil.rmtree(temp_dir)
+                    logger.info(f"[{request_id}] Cleaned up expired upload session {upload_id}, removed temp dir: {temp_dir}")
+                except Exception as e:
+                    logger.warning(f"[{request_id}] Failed to remove temp directory for expired upload {upload_id}: {str(e)}")
+    
+    # Remove expired sessions
+    for upload_id in expired_ids:
+        chunked_uploads.pop(upload_id, None)
+    
+    if expired_ids:
+        logger.info(f"Cleaned up {len(expired_ids)} expired upload sessions")
+
+# Start periodic cleanup (every 15 minutes)
+def periodic_cleanup():
+    """Run cleanup every 15 minutes"""
+    cleanup_expired_uploads()
+    # Schedule next cleanup in 15 minutes
+    threading.Timer(15 * 60, periodic_cleanup).start()
+
+# Start cleanup thread when module is loaded
+periodic_cleanup()
 
 # Models for chunked upload
 class UploadInitRequest(BaseModel):
-    """Request model for initiating a chunked file upload."""
+    """Request model for initiating a chunked upload"""
     file_name: str
     total_chunks: int
     total_size: int
     mime_type: str = "application/pdf"
 
 class UploadInitResponse(BaseModel):
-    """Response model for successful chunked upload initialization."""
+    """Response model for chunked upload initialization"""
     upload_id: str
     expires_at: str
 
 class ChunkUploadRequest(BaseModel):
-    """Request model for uploading a chunk of a file."""
+    """Request model for uploading a chunk of a file"""
     upload_id: str
     chunk_index: int
     total_chunks: int
     chunk_data: str  # Base64 encoded binary data
 
 class ChunkUploadResponse(BaseModel):
-    """Response model for a successful chunk upload."""
+    """Response model for a chunk upload"""
     upload_id: str
     chunks_received: int
     total_chunks: int
     is_complete: bool
 
 class FinalizeUploadRequest(BaseModel):
-    """Request model for finalizing a chunked upload."""
+    """Request to finalize a chunked upload"""
     upload_id: str
     original_name: str
 
@@ -114,6 +155,9 @@ async def initiate_chunked_upload(request: UploadInitRequest):
     Initiate a chunked upload process for a large file.
     Returns an upload_id that must be used for subsequent chunk uploads.
     """
+    # Clean up expired sessions before creating a new one
+    cleanup_expired_uploads()
+    
     # Generate a unique upload ID
     upload_id = uuid.uuid4().hex
     request_id = uuid.uuid4().hex[:8]
@@ -127,7 +171,7 @@ async def initiate_chunked_upload(request: UploadInitRequest):
     # Create a temporary directory for this upload
     temp_dir = tempfile.mkdtemp(prefix=f"chunked_{upload_id}_")
     
-    # Initialize the upload session
+    # Initialize the upload session with a 1-hour expiration
     expires_at = time.time() + 3600  # 1 hour expiration
     
     chunked_uploads[upload_id] = {
@@ -234,7 +278,6 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
         with open(temp_file_path, "wb") as outfile:
             for i in range(upload_session["total_chunks"]):
                 chunk_path = upload_session["chunks"][i]
-                logger.debug(f"[{request_id}] Adding chunk {i} from {chunk_path}")
                 with open(chunk_path, "rb") as infile:
                     outfile.write(infile.read())
         
@@ -245,17 +288,76 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
         with open(temp_file_path, "rb") as f:
             file_content = f.read()
         
-        # Now process the document
-        start_time = time.time()
+        # Process the document using the existing processing logic
+        result = await process_document(
+            request_id=request_id,
+            file_content=file_content,
+            original_name=request.original_name,
+            filename=Path(request.original_name).name
+        )
         
-        # Process PDF document steps similar to the upload_document endpoint
+        # Clean up the session
+        del chunked_uploads[request.upload_id]
+        
+        return result
+    except Exception as e:
+        logger.error(f"[{request_id}] Error finalizing upload: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Error finalizing upload: {str(e)}")
+    finally:
+        # Clean up temporary files
+        try:
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+                logger.debug(f"[{request_id}] Removed temporary directory: {temp_dir}")
+        except Exception as e:
+            logger.warning(f"[{request_id}] Failed to clean up temporary files: {str(e)}")
+
+# Extract document processing into a separate function
+async def process_document(request_id: str, file_content: bytes, original_name: str, filename: str):
+    """
+    Process a document using LangChain components and store in Supabase and GCP.
+    """
+    start_time = time.time()
+    temp_dir = None
+    temp_file_path = None
+    
+    try:
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp(prefix=f"process_{request_id}_")
+        logger.debug(f"[{request_id}] Created temporary directory: {temp_dir}")
+        
+        # Save the file content to a temporary file
+        temp_file_path = os.path.join(temp_dir, f"{request_id}.pdf")
+        logger.debug(f"[{request_id}] Creating temporary file at {temp_file_path}")
+        
+        with open(temp_file_path, "wb") as f:
+            f.write(file_content)
+        logger.info(f"[{request_id}] File saved to temporary location: {temp_file_path}")
+        
+        # Verify file was written correctly
+        if not os.path.exists(temp_file_path):
+            raise Exception(f"Failed to write temporary file at {temp_file_path}")
+        
+        file_size = os.path.getsize(temp_file_path)
+        if file_size != len(file_content):
+            raise Exception(f"File size mismatch. Expected {len(file_content)}, got {file_size}")
+        
+        logger.debug(f"[{request_id}] File verification successful: {file_size} bytes")
+        
+        # Process steps with detailed logging for each stage
         try:
             # Step 1: Process PDF
             logger.info(f"[{request_id}] Processing PDF document")
             start_process = time.time()
             try:
+                # Log document processor settings for debugging
+                logger.debug(f"[{request_id}] Document processor configuration: chunk_size={document_processor.chunk_size}")
                 documents = document_processor.process_pdf(pdf_path=temp_file_path)
                 logger.info(f"[{request_id}] PDF processed successfully. Extracted {len(documents)} chunks in {time.time() - start_process:.2f} seconds")
+                # Log a sample of the first document for debugging
+                if documents and len(documents) > 0:
+                    logger.debug(f"[{request_id}] First document sample: {documents[0].page_content[:100]}...")
             except Exception as e:
                 logger.error(f"[{request_id}] Failed to process PDF: {str(e)}")
                 logger.error(traceback.format_exc())
@@ -273,16 +375,18 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
                 raise HTTPException(status_code=500, detail=f"Failed to generate embeddings: {str(e)}")
             
             # Step 3: Upload to GCP
-            filename = Path(request.original_name).name
-            logger.info(f"[{request_id}] Uploading to Google Cloud Storage with filename: {filename}")
+            logger.info(f"[{request_id}] Uploading to Google Cloud Storage")
             start_gcp = time.time()
             try:
+                # Log GCP configuration for debugging
+                logger.debug(f"[{request_id}] GCP destination folder: {settings.GCP_DESTINATION_FOLDER}")
                 gcp_url = vector_store.upload_to_gcp(
                     buffer=file_content,
                     filename=filename,
                     destination=settings.GCP_DESTINATION_FOLDER
                 )
                 logger.info(f"[{request_id}] File uploaded to GCP successfully in {time.time() - start_gcp:.2f} seconds")
+                logger.debug(f"[{request_id}] GCP URL: {gcp_url}")
             except Exception as e:
                 logger.error(f"[{request_id}] Failed to upload to GCP: {str(e)}")
                 logger.error(traceback.format_exc())
@@ -292,8 +396,10 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
             logger.info(f"[{request_id}] Inserting file metadata to Supabase")
             start_meta = time.time()
             try:
+                # Log Supabase configuration for debugging
+                logger.debug(f"[{request_id}] Supabase table: {settings.SUPABASE_TABLE}")
                 file_id = vector_store.insert_file_metadata(
-                    title=request.original_name,
+                    title=original_name,
                     link=gcp_url
                 )
                 logger.info(f"[{request_id}] File metadata inserted successfully in {time.time() - start_meta:.2f} seconds. File ID: {file_id}")
@@ -311,7 +417,7 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
                         "id": f"{file_id}_chunk_{i}",
                         "fileId": file_id,
                         "position": i,
-                        "originalName": request.original_name,
+                        "originalName": original_name,
                         "downloadUrl": gcp_url
                     }
                     for i in range(len(documents))
@@ -328,9 +434,6 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
             total_time = time.time() - start_time
             logger.info(f"[{request_id}] Document upload and processing completed successfully in {total_time:.2f} seconds")
             
-            # Clean up the session after successful processing
-            del chunked_uploads[request.upload_id]
-            
             return JSONResponse(content={
                 "message": "Document processed successfully",
                 "details": {
@@ -340,7 +443,7 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
                     "processing_time_seconds": total_time
                 }
             })
-        
+            
         except HTTPException:
             # Re-raise HTTP exceptions as they're already formatted correctly
             raise
@@ -349,23 +452,26 @@ async def finalize_chunked_upload(request: FinalizeUploadRequest):
             logger.error(f"[{request_id}] Unexpected error in document processing: {str(e)}")
             logger.error(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-            
     except HTTPException:
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        logger.error(f"[{request_id}] Error finalizing upload: {str(e)}")
+        logger.error(f"[{request_id}] Unhandled exception: {str(e)}")
         logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Error finalizing upload: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
     finally:
         # Clean up temporary files
+        logger.debug(f"[{request_id}] Cleaning up temporary files")
         try:
-            if os.path.exists(temp_dir):
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+                logger.debug(f"[{request_id}] Removed temporary file: {temp_file_path}")
+                
+            if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
                 logger.debug(f"[{request_id}] Removed temporary directory: {temp_dir}")
         except Exception as e:
             logger.warning(f"[{request_id}] Failed to clean up temporary files: {str(e)}")
-            # Don't re-raise as this is just cleanup
 
 @router.post("/upload_document/")
 async def upload_document(
@@ -419,7 +525,7 @@ async def upload_document(
     file_size_mb = total_size / (1024 * 1024)
     logger.info(f"[{request_id}] File size: {file_size_mb:.2f}MB")
     
-    # Process the document
+    # Process the document using shared processing logic
     return await process_document(
         request_id=request_id,
         file_content=file_content,

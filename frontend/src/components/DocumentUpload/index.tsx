@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { uploadDocument } from '../../services/api';
+import { uploadDocument, UploadProgressInfo } from '../../services/api';
 
 const Container = styled.div`
   display: flex;
@@ -65,14 +65,23 @@ const Button = styled.button`
   }
 `;
 
-const Message = styled.div<{ type: 'success' | 'error' }>`
+const Message = styled.div<{ type: 'success' | 'error' | 'info' | 'warning' }>`
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 6px;
-  background: ${props => props.type === 'success' ? '#e6f4ea' : '#fce8e6'};
-  color: ${props => props.type === 'success' ? '#1e4620' : '#c5221f'};
+  background: ${props => 
+    props.type === 'success' ? '#e6f4ea' : 
+    props.type === 'info' ? '#e8f0fe' : 
+    props.type === 'warning' ? '#fef7e0' :
+    '#fce8e6'};
+  color: ${props => 
+    props.type === 'success' ? '#1e4620' : 
+    props.type === 'info' ? '#1a73e8' : 
+    props.type === 'warning' ? '#b06000' :
+    '#c5221f'};
   font-size: 0.875rem;
   text-align: center;
+  width: 100%;
 `;
 
 const FileName = styled.span`
@@ -81,40 +90,178 @@ const FileName = styled.span`
   margin-top: 0.5rem;
 `;
 
+const ProgressContainer = styled.div`
+  width: 100%;
+  margin-top: 1rem;
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.div<{ percentage: number }>`
+  height: 100%;
+  width: ${props => props.percentage}%;
+  background-color: #5c6a5a;
+  transition: width 0.3s ease;
+`;
+
+const ProgressText = styled.div`
+  font-size: 0.75rem;
+  color: #666;
+  text-align: center;
+  margin-top: 0.5rem;
+`;
+
+const StageIndicator = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 0.5rem;
+`;
+
+const Stage = styled.div<{ active: boolean, completed: boolean }>`
+  font-size: 0.75rem;
+  color: ${props => 
+    props.completed ? '#1e4620' : 
+    props.active ? '#1a73e8' : 
+    '#666'};
+  font-weight: ${props => (props.active || props.completed) ? 'bold' : 'normal'};
+`;
+
+const RetryButton = styled.button`
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: #1a73e8;
+  border: 1px solid #1a73e8;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(26, 115, 232, 0.1);
+  }
+`;
+
 const DocumentUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
+  const [progress, setProgress] = useState<UploadProgressInfo | null>(null);
+  const [uploadFailed, setUploadFailed] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       setSelectedFile(file);
       setMessage(null);
+      setProgress(null);
+      setUploadFailed(false);
+      
+      // Show file size information
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      const isLargeFile = file.size > 10 * 1024 * 1024;
+      
+      if (isLargeFile) {
+        setMessage({ 
+          text: `Selected file is ${fileSizeMB}MB. It will be uploaded in chunks. This may take several minutes depending on your connection speed.`, 
+          type: 'warning' 
+        });
+      } else {
+        setMessage({ 
+          text: `Selected file is ${fileSizeMB}MB.`, 
+          type: 'info' 
+        });
+      }
     } else {
       setMessage({ text: 'Please select a PDF file', type: 'error' });
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleProgressUpdate = (progressInfo: UploadProgressInfo) => {
+    setProgress(progressInfo);
+    
+    if (progressInfo.stage === 'processing') {
+      setMessage({ 
+        text: 'Processing document... This may take a minute for large files.', 
+        type: 'info' 
+      });
+    }
+  };
+
+  const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
-    setMessage(null);
+    setUploadFailed(false);
+    setMessage({ text: 'Starting upload...', type: 'info' });
+    setProgress({
+      loaded: 0,
+      total: selectedFile.size,
+      percentage: 0,
+      stage: 'preparing',
+      message: 'Preparing upload...'
+    });
 
     try {
-      await uploadDocument(selectedFile, selectedFile.name);
+      await uploadDocument(selectedFile, selectedFile.name, handleProgressUpdate);
       setMessage({ text: 'Document uploaded successfully!', type: 'success' });
       setSelectedFile(null);
       // Reset the file input
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-    } catch (error) {
-      setMessage({ text: 'Failed to upload document. Please try again.', type: 'error' });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploadFailed(true);
+      
+      // Provide more specific error messages based on the error
+      if (error.message && error.message.includes('chunk')) {
+        setMessage({ 
+          text: `Chunk upload failed. Please check your connection and try again.`, 
+          type: 'error' 
+        });
+      } else if (error.response?.status === 413) {
+        setMessage({ 
+          text: 'File too large for direct upload. The system will try to upload in chunks.',
+          type: 'warning' 
+        });
+      } else {
+        setMessage({ 
+          text: `Failed to upload document: ${error.message || 'Unknown error'}`, 
+          type: 'error' 
+        });
+      }
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await handleUpload();
+  };
+  
+  const handleRetry = async () => {
+    await handleUpload();
+  };
+  
+  const getStageStatus = (stageName: string) => {
+    if (!progress) return { active: false, completed: false };
+    
+    const stages = ['preparing', 'uploading', 'processing', 'complete'];
+    const currentStageIndex = stages.indexOf(progress.stage);
+    const stageIndex = stages.indexOf(stageName);
+    
+    return {
+      active: stageIndex === currentStageIndex,
+      completed: stageIndex < currentStageIndex
+    };
   };
 
   return (
@@ -133,12 +280,35 @@ const DocumentUpload: React.FC = () => {
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
           <span>Click to upload or drag and drop</span>
-          <span style={{ fontSize: '0.75rem', color: '#666' }}>PDF files only</span>
+          <span style={{ fontSize: '0.75rem', color: '#666' }}>PDF files only (any size)</span>
           {selectedFile && <FileName>{selectedFile.name}</FileName>}
         </Label>
         <Button type="submit" disabled={!selectedFile || isUploading}>
           {isUploading ? 'Uploading...' : 'Upload Document'}
         </Button>
+        
+        {progress && (
+          <ProgressContainer>
+            <ProgressBar>
+              <ProgressFill percentage={progress.percentage} />
+            </ProgressBar>
+            <ProgressText>
+              {progress.message} ({Math.round(progress.loaded / 1024 / 1024 * 100) / 100}MB / {Math.round(progress.total / 1024 / 1024 * 100) / 100}MB)
+            </ProgressText>
+            <StageIndicator>
+              <Stage {...getStageStatus('preparing')}>Preparing</Stage>
+              <Stage {...getStageStatus('uploading')}>Uploading</Stage>
+              <Stage {...getStageStatus('processing')}>Processing</Stage>
+              <Stage {...getStageStatus('complete')}>Complete</Stage>
+            </StageIndicator>
+          </ProgressContainer>
+        )}
+        
+        {uploadFailed && (
+          <RetryButton type="button" onClick={handleRetry}>
+            Retry Upload
+          </RetryButton>
+        )}
       </Form>
       {message && (
         <Message type={message.type}>
