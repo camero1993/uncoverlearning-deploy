@@ -14,7 +14,24 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add a reasonable timeout for all requests
+  timeout: 30000, // 30 seconds default timeout
 });
+
+// Add response interceptor for better error logging
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', {
+      message: error.message,
+      endpoint: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -22,29 +39,61 @@ export interface Message {
 }
 
 export const uploadDocument = async (file: File, filename: string): Promise<any> => {
+  // Create form data
   const formData = new FormData();
   formData.append('file', file);
   formData.append('original_name', filename);
 
   console.log(`uploadDocument: POSTing to ${API_BASE_URL}/api/documents/upload_document/`);
+  console.log(`File details: Name=${filename}, Size=${(file.size / 1024 / 1024).toFixed(2)}MB, Type=${file.type}`);
+  
   try {
+    // Set timeout for large files to prevent hanging requests
+    // Increase timeout for large files (30 seconds)
     const response = await api.post('/api/documents/upload_document/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 60000, // 60 seconds timeout for uploads
+      onUploadProgress: (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || file.size));
+        console.log(`Upload progress: ${percentCompleted}%`);
+      }
     });
+    
     console.log('Upload successful, response:', response.data);
     return response.data;
   } catch (error: any) {
+    // Detailed error categorization and logging
+    if (error.code === 'ECONNABORTED') {
+      console.error('Upload timeout: Request took too long to complete');
+    }
+    
     console.error('Upload error details:', {
+      name: error.name,
       message: error.message,
+      code: error.code,
+      stack: error.stack,
       response: error.response ? {
         status: error.response.status,
+        statusText: error.response.statusText,
         data: error.response.data,
         headers: error.response.headers
       } : 'No response',
-      request: error.request ? 'Request was made but no response received' : 'No request was made'
+      request: error.request ? 'Request was made but no response received' : 'No request was made',
+      config: error.config ? {
+        url: error.config.url,
+        method: error.config.method,
+        timeout: error.config.timeout,
+        headers: error.config.headers
+      } : 'No config'
     });
+    
+    // Rethrow with enhanced message for timeout case
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('Upload timed out. The file may be too large or the server is too busy.');
+    }
+    
     throw error;
   }
 };
@@ -69,16 +118,19 @@ export const getChatHistory = async (): Promise<Message[]> => {
   console.log('getChatHistory: Requesting from', fullUrl);
   
   try {
-    // Make a direct fetch call for diagnostic purposes
-    const directFetch = await fetch(fullUrl);
-    console.log('Direct fetch result:', directFetch.status);
-  } catch (error) {
-    console.error('Direct fetch failed:', error);
+    // Use axios instance with the correct path
+    const response = await api.get('/api/queries/chat-history');
+    console.log('Chat history response:', response.status, response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Chat history fetch failed:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    // Return empty array on error to prevent UI crashes
+    return [];
   }
-  
-  // Now use axios as before
-  const response = await api.get('/api/queries/chat-history');
-  return response.data;
 };
 
 export const clearChatHistory = async (): Promise<void> => {
