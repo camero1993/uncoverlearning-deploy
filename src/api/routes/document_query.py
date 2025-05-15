@@ -27,18 +27,23 @@ class QueryRequest(BaseModel):
     """Request model for document queries."""
     query: str
     file_title: Optional[str] = None
-    conversation_history: Optional[List[Dict[str, Any]]] = None
 
 @router.post("/query_document/")
 async def query_document(request: QueryRequest):
     """
     Query the RAG pipeline with a question and optional file title.
+    
+    Conversation history is automatically maintained by the RAG chain's memory system,
+    allowing for contextual follow-up questions without explicit history management.
     """
     try:
-        # Query the RAG chain
+        # Extract file_title - if it's None or empty string, set to None
+        file_title = request.file_title if request.file_title else None
+        
+        # Query the RAG chain (conversation history is handled internally)
         response = rag_chain.query(
             question=request.query,
-            file_title=request.file_title
+            file_title=file_title
         )
         
         return JSONResponse(content={
@@ -56,4 +61,34 @@ async def query_document(request: QueryRequest):
             ]
         })
     except Exception as e:
-        raise QueryProcessingError(str(e)) 
+        raise QueryProcessingError(str(e))
+
+@router.get("/chat-history")
+async def get_chat_history():
+    """
+    Retrieve the conversation history from the RAG chain's memory.
+    """
+    try:
+        # Convert the conversation history to a list of messages
+        history = []
+        if hasattr(rag_chain, 'memory') and hasattr(rag_chain.memory, 'chat_memory'):
+            for message in rag_chain.memory.chat_memory.messages:
+                if hasattr(message, 'type') and hasattr(message, 'content'):
+                    role = 'assistant' if message.type == 'ai' else 'user'
+                    history.append({"role": role, "content": message.content})
+        
+        return history
+    except Exception as e:
+        raise QueryProcessingError(f"Failed to retrieve chat history: {str(e)}")
+
+@router.delete("/chat-history")
+async def clear_chat_history():
+    """
+    Clear the conversation history from the RAG chain's memory.
+    """
+    try:
+        if hasattr(rag_chain, 'memory') and hasattr(rag_chain.memory, 'clear'):
+            rag_chain.memory.clear()
+        return {"message": "Chat history cleared successfully"}
+    except Exception as e:
+        raise QueryProcessingError(f"Failed to clear chat history: {str(e)}") 
