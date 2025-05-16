@@ -166,20 +166,20 @@ class LangChainVectorStore:
     
     def add_documents(
         self,
-        documents: List[Document],
-        metadata: Optional[List[Dict[str, Any]]] = None
+        documents: List[Document]
     ) -> List[str]:
         """
         Add documents to the vector store.
+        Each Document in the 'documents' list should already have its .metadata attribute set.
         
         Args:
-            documents: List of LangChain Document objects
-            metadata: Optional list of metadata dictionaries for each document
+            documents: List of LangChain Document objects, each with populated .metadata
             
         Returns:
-            List of document IDs
+            List of document IDs (typically the internal IDs from the vector store)
         """
-        return self.vector_store.add_documents(documents, metadata)
+        # The underlying SupabaseVectorStore.add_documents expects metadata to be on each Document object
+        return self.vector_store.add_documents(documents)
     
     def similarity_search(
         self,

@@ -414,21 +414,31 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             try:
                 metadata_list = [
                     {
-                        "id": f"{file_id}_chunk_{i}",
-                        "fileId": file_id,
-                        "position": i,
-                        "originalName": original_name,
-                        "downloadUrl": gcp_url
+                        "id": f"{file_id}_chunk_{i}", # This will be the primary key for the chunk
+                        "fileId": file_id, # Foreign key to the files table
+                        "position": i, # Order of the chunk within the document
+                        "originalName": original_name, # Original name of the uploaded PDF
+                        "downloadUrl": gcp_url # Link to the PDF stored in GCP
+                        # page_content and embedding will be handled by SupabaseVectorStore
                     }
                     for i in range(len(documents))
                 ]
+
+                if len(documents) != len(metadata_list):
+                    # This should ideally not happen if metadata_list is derived from documents
+                    logger.error(f"[{request_id}] Mismatch between number of documents ({len(documents)}) and metadata entries ({len(metadata_list)})")
+                    raise ValueError("Mismatch between number of documents and metadata entries prepared.")
+
+                # Assign the constructed metadata to each document object
+                for doc, meta in zip(documents, metadata_list):
+                    doc.metadata = meta
                 
-                vector_store.add_documents(documents, metadata_list)
+                # Now call add_documents with only the documents list
+                # The SupabaseVectorStore will use the .metadata attribute of each Document
+                vector_store.add_documents(documents)
                 logger.info(f"[{request_id}] Documents added to vector store successfully in {time.time() - start_vector:.2f} seconds")
             except Exception as e:
                 logger.error(f"[{request_id}] Failed to add documents to vector store: {str(e)}")
-                logger.error(traceback.format_exc())
-                raise HTTPException(status_code=500, detail=f"Failed to add documents to vector store: {str(e)}")
             
             # Return success response
             total_time = time.time() - start_time
