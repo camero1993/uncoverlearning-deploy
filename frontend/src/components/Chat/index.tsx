@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { queryDocument, getChatHistory, clearChatHistory, Message } from '../../services/api';
 
@@ -159,23 +159,12 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadChatHistory();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const loadChatHistory = async () => {
+  const loadChatHistory = useCallback(async () => {
     try {
       console.log('loadChatHistory: Attempting to load chat history');
       const history = await getChatHistory();
       console.log('loadChatHistory: Successfully loaded history', history);
       
-      // If history is empty, add a welcome message
       if (history.length === 0) {
         let welcomeMessage = 'Welcome! How can I help you with your document today?';
         if (fileTitle) {
@@ -214,7 +203,17 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
         content: welcomeMessage
       }]);
     }
-  };
+  }, [fileTitle]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadChatHistory();
+    }
+  }, [isOpen, loadChatHistory]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

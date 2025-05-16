@@ -222,7 +222,7 @@ const uploadChunkedFile = async (
       // Upload chunk with retry logic
       console.log(`Uploading chunk ${chunkIndex + 1}/${totalChunks}`);
       try {
-        const chunkResponse = await uploadChunkWithRetry(
+        const _chunkResponse = await uploadChunkWithRetry(
           uploadId,
           chunkIndex,
           totalChunks,

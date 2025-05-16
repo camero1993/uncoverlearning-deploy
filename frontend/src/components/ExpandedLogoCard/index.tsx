@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import Chat from '../Chat';
-import { uploadDocument, UploadProgressInfo } from '../../services/api';
+import { uploadDocument } from '../../services/api';
 
 interface ExpandedLogoCardProps {
   onCollapse: () => void;
