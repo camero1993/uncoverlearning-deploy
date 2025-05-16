@@ -68,8 +68,7 @@ class LangChainVectorStore:
             client=self.supabase,
             embedding=self.embeddings,
             table_name=self.table_name,
-            query_name="custom_match_documents",
-            content_column_name="extractedText"
+            query_name="custom_match_documents"
         )
     
     def upload_to_gcp(self, buffer: bytes, filename: str, destination: str) -> str:
