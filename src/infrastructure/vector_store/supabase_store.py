@@ -9,6 +9,18 @@ import os
 from dotenv import load_dotenv
 import uuid
 
+# Attempt to import load_gcp_credentials. Assuming gcp_credentials_loader.py is at the project root.
+# If it's located elsewhere (e.g., in src or src/core), adjust the import path accordingly.
+try:
+    from gcp_credentials_loader import load_gcp_credentials
+except ImportError:
+    # Fallback if the primary location fails, try assuming it's in src
+    try:
+        from src.gcp_credentials_loader import load_gcp_credentials
+    except ImportError:
+        load_gcp_credentials = None
+        print("WARNING: gcp_credentials_loader.py not found. GCP operations might fail if credentials are not implicitly available.")
+
 # Load environment variables
 load_dotenv()
 
@@ -73,8 +85,41 @@ class LangChainVectorStore:
         if not self.gcp_bucket:
             raise ValueError("GCP_BUCKET environment variable is not set.")
         
+        gcp_creds = None
+        if load_gcp_credentials:
+            gcp_creds = load_gcp_credentials()
+
+        if not gcp_creds:
+            # If load_gcp_credentials failed or was not found,
+            # storage.Client() will try to use Application Default Credentials.
+            # The original error indicates this was failing, so this path will likely still fail
+            # unless ADC is configured correctly without relying on GOOGLE_APPLICATION_CREDENTIALS_JSON.
+            # We log a warning here if the explicit loader was available but returned None.
+            if load_gcp_credentials is not None: # Check if the function itself was found
+                 print("WARNING: load_gcp_credentials() returned no credentials. Attempting default ADC for GCS client.")
+            # No explicit error raise here, to allow storage.Client() to try its default mechanisms,
+            # which is what it was doing before, though it was failing.
+            # This keeps the original behavior path if explicit loading fails,
+            # but the core issue is that default ADC was not found.
+            # The ideal scenario is gcp_creds being successfully loaded.
+        
         # Initialize GCP client
-        storage_client = storage.Client()
+        # If gcp_creds is None, storage.Client() will attempt to find ADC itself.
+        # If gcp_creds is successfully loaded, it will be used.
+        try:
+            if gcp_creds:
+                project_id = gcp_creds.project_id if hasattr(gcp_creds, 'project_id') else None
+                storage_client = storage.Client(credentials=gcp_creds, project=project_id)
+                print("INFO: GCS client initialized with explicitly loaded credentials.")
+            else:
+                storage_client = storage.Client() # Relies on ADC
+                print("INFO: GCS client initialized using default Application Default Credentials (ADC).")
+        except Exception as e:
+            print(f"ERROR: Failed to initialize GCS storage client: {e}")
+            # This error might occur if even the default ADC check within storage.Client() fails
+            # or if there's an issue with the explicitly passed credentials.
+            raise # Re-raise the exception to indicate failure to initialize client
+
         bucket = storage_client.bucket(self.gcp_bucket)
         full_path = f"{destination}/{filename}"
         
