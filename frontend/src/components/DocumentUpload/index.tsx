@@ -168,6 +168,14 @@ const DocumentUpload: React.FC = () => {
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
       const isLargeFile = file.size > 10 * 1024 * 1024;
       
+      console.log('File selected:', {
+        name: file.name,
+        size: file.size,
+        sizeMB: fileSizeMB,
+        type: file.type,
+        isLargeFile: isLargeFile
+      });
+      
       if (isLargeFile) {
         setMessage({ 
           text: `Selected file is ${fileSizeMB}MB. It will be uploaded in chunks. This may take several minutes depending on your connection speed.`, 
@@ -210,6 +218,13 @@ const DocumentUpload: React.FC = () => {
     });
 
     try {
+      console.log('Starting upload for file:', {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        sizeMB: (selectedFile.size / (1024 * 1024)).toFixed(2),
+        type: selectedFile.type,
+      });
+      
       await uploadDocument(selectedFile, selectedFile.name, handleProgressUpdate);
       setMessage({ text: 'Document uploaded successfully!', type: 'success' });
       setSelectedFile(null);
@@ -227,10 +242,18 @@ const DocumentUpload: React.FC = () => {
           type: 'error' 
         });
       } else if (error.response?.status === 413) {
+        // This should be handled by the API service, but just in case
+        const fileSize = (selectedFile.size / (1024 * 1024)).toFixed(2);
         setMessage({ 
-          text: 'File too large for direct upload. The system will try to upload in chunks.',
+          text: `File size (${fileSize}MB) exceeds server limit. The system will try again with chunked upload.`,
           type: 'warning' 
         });
+        
+        // Auto-retry with chunked upload
+        setTimeout(() => {
+          console.log('Auto-retrying with chunked upload...');
+          handleRetry();
+        }, 1500);
       } else {
         setMessage({ 
           text: `Failed to upload document: ${error.message || 'Unknown error'}`, 

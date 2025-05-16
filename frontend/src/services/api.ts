@@ -300,6 +300,14 @@ export const uploadDocument = async (
 ): Promise<any> => {
   const MAX_DIRECT_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
   
+  // Enhanced logging for debugging
+  console.log('------ UPLOAD DOCUMENT ------');
+  console.log(`File: ${filename}`);
+  console.log(`Size: ${file.size} bytes (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+  console.log(`Type: ${file.type}`);
+  console.log(`Threshold: ${MAX_DIRECT_UPLOAD_SIZE} bytes (${MAX_DIRECT_UPLOAD_SIZE / (1024 * 1024)} MB)`);
+  console.log(`Should use chunked upload: ${file.size > MAX_DIRECT_UPLOAD_SIZE}`);
+  
   try {
     // For larger files, use chunked upload
     if (file.size > MAX_DIRECT_UPLOAD_SIZE) {
@@ -312,12 +320,22 @@ export const uploadDocument = async (
     return await uploadSingleFile(file, filename, onProgress);
   } catch (error: any) {
     // If direct upload fails with a specific error, try chunked upload
-    if (error.message === 'CHUNKED_UPLOAD_REQUIRED') {
+    if (error.response?.status === 413 || error.message === 'CHUNKED_UPLOAD_REQUIRED') {
       console.log('Switching to chunked upload after receiving 413 error');
       return await uploadChunkedFile(file, filename, onProgress);
     }
     
     // Otherwise, pass through the error
+    console.error('Upload error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data
+      } : 'No response'
+    });
+    
     throw error;
   }
 };
