@@ -17,8 +17,11 @@ class Settings:
     CORS_ORIGINS = [
         "https://uncoverlearning-deploy.vercel.app",
         "https://uncoverlearning.vercel.app",
+        "https://uncoverlearning-deploy-ky6fmt5j1-magnus-projects-a977a13e.vercel.app",  # Specific deployment URL
+        "https://*.vercel.app",  # Allow all vercel.app subdomains
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "*"  # Allow all origins for testing (remove in production if security is a concern)
     ]
     
     # Supabase Settings

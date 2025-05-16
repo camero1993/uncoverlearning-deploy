@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { uploadDocument, uploadChunkedFile, UploadProgressInfo, testChunkedUploadConnectivity } from '../../services/api';
+import { uploadDocument, UploadProgressInfo } from '../../services/api';
 
 const Container = styled.div`
   display: flex;
@@ -11,7 +11,6 @@ const Container = styled.div`
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  position: relative;
 `;
 
 const Form = styled.form`
@@ -150,30 +149,12 @@ const RetryButton = styled.button`
   }
 `;
 
-const DebugButton = styled.button`
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  padding: 5px 10px;
-  font-size: 0.7rem;
-  background: transparent;
-  border: 1px solid #ccc;
-  color: #666;
-  cursor: pointer;
-  opacity: 0.5;
-  
-  &:hover {
-    opacity: 1;
-  }
-`;
-
 const DocumentUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [progress, setProgress] = useState<UploadProgressInfo | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -186,14 +167,6 @@ const DocumentUpload: React.FC = () => {
       // Show file size information
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
       const isLargeFile = file.size > 10 * 1024 * 1024;
-      
-      console.log('File selected:', {
-        name: file.name,
-        size: file.size,
-        sizeMB: fileSizeMB,
-        type: file.type,
-        isLargeFile: isLargeFile
-      });
       
       if (isLargeFile) {
         setMessage({ 
@@ -237,17 +210,7 @@ const DocumentUpload: React.FC = () => {
     });
 
     try {
-      console.log('Starting upload for file:', {
-        name: selectedFile.name,
-        size: selectedFile.size,
-        sizeMB: (selectedFile.size / (1024 * 1024)).toFixed(2),
-        type: selectedFile.type,
-      });
-      
-      console.log('Using chunked upload directly, bypassing size check');
-      // Use the chunked upload method directly
-      await uploadChunkedFile(selectedFile, selectedFile.name, handleProgressUpdate);
-      
+      await uploadDocument(selectedFile, selectedFile.name, handleProgressUpdate);
       setMessage({ text: 'Document uploaded successfully!', type: 'success' });
       setSelectedFile(null);
       // Reset the file input
@@ -264,18 +227,10 @@ const DocumentUpload: React.FC = () => {
           type: 'error' 
         });
       } else if (error.response?.status === 413) {
-        // This should be handled by the API service, but just in case
-        const fileSize = (selectedFile.size / (1024 * 1024)).toFixed(2);
         setMessage({ 
-          text: `File size (${fileSize}MB) exceeds server limit. The system will try again with chunked upload.`,
+          text: 'File too large for direct upload. The system will try to upload in chunks.',
           type: 'warning' 
         });
-        
-        // Auto-retry with chunked upload
-        setTimeout(() => {
-          console.log('Auto-retrying with chunked upload...');
-          handleRetry();
-        }, 1500);
       } else {
         setMessage({ 
           text: `Failed to upload document: ${error.message || 'Unknown error'}`, 
@@ -307,23 +262,6 @@ const DocumentUpload: React.FC = () => {
       active: stageIndex === currentStageIndex,
       completed: stageIndex < currentStageIndex
     };
-  };
-
-  const handleDebugClick = async () => {
-    try {
-      const result = await testChunkedUploadConnectivity();
-      setDebugInfo(JSON.stringify(result, null, 2));
-      setMessage({
-        text: 'API connectivity test success. Check console for details.',
-        type: 'info'
-      });
-    } catch (error) {
-      console.error('Debug test failed:', error);
-      setMessage({
-        text: 'API connectivity test failed. Check console for details.',
-        type: 'error'
-      });
-    }
   };
 
   return (
@@ -377,14 +315,6 @@ const DocumentUpload: React.FC = () => {
           {message.text}
         </Message>
       )}
-      {debugInfo && (
-        <pre style={{ fontSize: '0.7rem', maxHeight: '150px', overflow: 'auto', marginTop: '10px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
-          {debugInfo}
-        </pre>
-      )}
-      <DebugButton type="button" onClick={handleDebugClick}>
-        Test API
-      </DebugButton>
     </Container>
   );
 };

@@ -5,6 +5,7 @@ import { queryDocument, getChatHistory, clearChatHistory, Message } from '../../
 interface ChatProps {
   onClose: () => void;
   isOpen: boolean;
+  fileTitle?: string | null;
 }
 
 const Container = styled.div<{ isOpen: boolean }>`
@@ -152,7 +153,7 @@ const LoadingIndicator = styled.div`
   }
 `;
 
-const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
+const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -176,9 +177,13 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
       
       // If history is empty, add a welcome message
       if (history.length === 0) {
+        let welcomeMessage = 'Welcome! How can I help you with your document today?';
+        if (fileTitle) {
+          welcomeMessage = `Welcome! I'm ready to answer questions about "${fileTitle}".`;
+        }
         setMessages([{ 
           role: 'assistant', 
-          content: 'Welcome! How can I help you with your document today?' 
+          content: welcomeMessage
         }]);
       } else {
         setMessages(history);
@@ -200,9 +205,13 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
       }
       
       // Handle error gracefully by showing a welcome message instead
+      let welcomeMessage = 'Welcome! How can I help you with your document today?';
+      if (fileTitle) {
+        welcomeMessage = `Welcome! I'm ready to answer questions about "${fileTitle}".`;
+      }
       setMessages([{ 
         role: 'assistant', 
-        content: 'Welcome! How can I help you with your document today?' 
+        content: welcomeMessage
       }]);
     }
   };
@@ -221,9 +230,11 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
     setIsLoading(true);
 
     try {
-      const response = await queryDocument(input.trim());
+      console.log('Querying document with:', input.trim(), 'File title:', fileTitle);
+      const response = await queryDocument(input.trim(), fileTitle || undefined);
+      console.log('Query response:', response);
       setMessages(prev => [...prev, response]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send message:', error);
       setMessages(prev => [
         ...prev,
@@ -237,7 +248,14 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose }) => {
   const handleClearChat = async () => {
     try {
       await clearChatHistory();
-      setMessages([]);
+      let welcomeMessage = 'Chat history cleared. How can I help you now?';
+      if (fileTitle) {
+        welcomeMessage = `Chat history cleared. I'm ready to answer new questions about "${fileTitle}".`;
+      }
+      setMessages([{
+        role: 'assistant',
+        content: welcomeMessage
+      }]);
     } catch (error) {
       console.error('Failed to clear chat history:', error);
     }
