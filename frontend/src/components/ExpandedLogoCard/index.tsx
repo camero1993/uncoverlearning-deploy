@@ -122,8 +122,8 @@ const HiddenInput = styled.input`
   display: none;
 `;
 
-// Set maximum file size to 5MB as Render has stricter limits
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+// Set maximum file size to 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / (1024 * 1024);
 
 const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText }) => {
@@ -160,7 +160,7 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
       return;
     }
     
-    // Validate file size (limit to 5MB)
+    // Validate file size (limit to 50MB for this component's initial check)
     if (file.size > MAX_FILE_SIZE) {
       setUploadError(`File is too large. Maximum size is ${MAX_FILE_SIZE_MB}MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
       return;
@@ -174,6 +174,7 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
     
     try {
       console.log('Uploading document:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      // uploadDocument from api.ts will handle chunking for files > 10MB
       const result = await uploadDocument(file, file.name);
       console.log('Upload result:', result);
       
@@ -184,15 +185,14 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
       console.error('Upload error:', err);
       setIsUploading(false);
       
-      // Enhanced error reporting with detailed categorization
       let errorMessage = 'Failed to upload document: Unknown error.';
       
       if (err.response) {
-        // Server responded with error
         console.error('Server response:', err.response.data);
-        
         if (err.response.status === 413) {
-          errorMessage = `File is too large for the server to process. Please try a smaller file (under ${MAX_FILE_SIZE_MB}MB).`;
+          // This error might still come from the direct upload endpoint if a file > 10MB somehow bypassed the api.ts chunking logic,
+          // or if the chunking itself has an issue. The message in api.ts is more user-friendly for this.
+          errorMessage = `File is too large for the server to process directly. Chunked upload might be attempted or a smaller file (under 10MB for direct, or check chunking limits).`;
         } else if (err.response.status === 401 || err.response.status === 403) {
           errorMessage = 'Not authorized to upload files.';
         } else if (err.response.status >= 500) {
@@ -203,10 +203,10 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
           }
         }
       } else if (err.request) {
-        // Request made but no response received
         errorMessage = 'No response from server. Please check your internet connection.';
+      } else if (err.message && err.message.startsWith('Failed to upload chunk')) {
+        errorMessage = err.message; // Use the specific chunk failure message from api.ts
       } else if (err.message) {
-        // Other error
         errorMessage = `${err.message}`;
       }
       
