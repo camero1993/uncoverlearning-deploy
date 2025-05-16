@@ -49,9 +49,10 @@ class LangChainVectorStore:
         self.supabase_key = supabase_key or os.getenv("SUPABASE_KEY")
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         self.gcp_bucket = os.getenv("BUCKET")
+        self.table_name = table_name
         
-        if not all([self.supabase_url, self.supabase_key, self.gemini_api_key]):
-            raise ValueError("Missing required credentials. Please provide or set environment variables.")
+        if not all([self.supabase_url, self.supabase_key, self.gemini_api_key, self.table_name]):
+            raise ValueError("Missing required credentials or table name. Please provide or set environment variables.")
         
         # Initialize Supabase client
         self.supabase = create_client(self.supabase_url, self.supabase_key)
@@ -66,8 +67,9 @@ class LangChainVectorStore:
         self.vector_store = SupabaseVectorStore(
             client=self.supabase,
             embedding=self.embeddings,
-            table_name=table_name,
-            query_name="custom_match_documents"
+            table_name=self.table_name,
+            query_name="custom_match_documents",
+            content_column_name="extractedText"
         )
     
     def upload_to_gcp(self, buffer: bytes, filename: str, destination: str) -> str:

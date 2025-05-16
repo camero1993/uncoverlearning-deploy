@@ -16,7 +16,7 @@ services:
       - key: GCP_DESTINATION_FOLDER
         value: uploaded_docs
       - key: SUPABASE_TABLE
-        value: files
+        value: chunks
       - key: EMBEDDING_MODEL
         value: models/text-embedding-004
       - key: GENERATION_MODEL

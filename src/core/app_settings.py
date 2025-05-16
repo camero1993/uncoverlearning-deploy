@@ -27,7 +27,7 @@ class Settings:
     # Supabase Settings
     SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL")
     SUPABASE_KEY: Optional[str] = os.getenv("SUPABASE_KEY")
-    SUPABASE_TABLE: str = os.getenv("SUPABASE_TABLE", "files")
+    SUPABASE_TABLE: str = os.getenv("SUPABASE_TABLE", "chunks")
     
     # GCP Settings
     GCP_BUCKET: Optional[str] = os.getenv("BUCKET")
