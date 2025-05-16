@@ -142,11 +142,16 @@ const uploadChunkWithRetry = async (
   retryCount = 0
 ): Promise<any> => {
   try {
+    // Use explicit content-type to ensure the server recognizes it correctly
     return await api.post('/api/documents/upload_chunk/', {
       upload_id: uploadId,
       chunk_index: chunkIndex,
       total_chunks: totalChunks,
       chunk_data: chunkData
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   } catch (error: any) {
     // If we haven't exceeded max retries, try again
@@ -163,7 +168,7 @@ const uploadChunkWithRetry = async (
 };
 
 // Chunked upload for larger files
-const uploadChunkedFile = async (
+export const uploadChunkedFile = async (
   file: File, 
   filename: string, 
   onProgress?: ProgressCallback
@@ -172,7 +177,8 @@ const uploadChunkedFile = async (
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   
   console.log(`Starting chunked upload for ${filename}`);
-  console.log(`File details: Size=${(file.size / 1024 / 1024).toFixed(2)}MB, Chunks=${totalChunks}`);
+  console.log(`File details: Size=${(file.size / (1024 * 1024)).toFixed(2)}MB, Chunks=${totalChunks}`);
+  console.log(`API Base URL: ${API_BASE_URL}`);
   
   onProgress?.({
     loaded: 0,
@@ -185,13 +191,19 @@ const uploadChunkedFile = async (
   try {
     // Step 1: Initialize chunked upload
     console.log('Initializing chunked upload');
+    console.log(`POST ${API_BASE_URL}/api/documents/initiate_chunked_upload/`);
     const initResponse = await api.post('/api/documents/initiate_chunked_upload/', {
       file_name: filename,
       total_chunks: totalChunks,
       total_size: file.size,
       mime_type: file.type
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
+    console.log('Initialization response:', initResponse.data);
     const uploadId = initResponse.data.upload_id;
     console.log(`Chunked upload initialized with ID: ${uploadId}`);
     
@@ -263,6 +275,10 @@ const uploadChunkedFile = async (
     const finalizeResponse = await api.post('/api/documents/finalize_chunked_upload/', {
       upload_id: uploadId,
       original_name: filename
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
     console.log('Chunked upload finalized, response:', finalizeResponse.data);
@@ -278,6 +294,21 @@ const uploadChunkedFile = async (
     return finalizeResponse.data;
   } catch (error: any) {
     console.error('Chunked upload error:', error);
+    
+    // Enhanced error logging
+    if (error.response) {
+      console.error('Error response from server:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
     throw error;
   }
 };
@@ -378,6 +409,37 @@ export const getChatHistory = async (): Promise<Message[]> => {
 export const clearChatHistory = async (): Promise<void> => {
   console.log(`clearChatHistory: DELETEing to ${API_BASE_URL}/api/queries/chat-history`);
   await api.delete('/api/queries/chat-history');
+};
+
+// Test function to check chunked upload API connectivity
+export const testChunkedUploadConnectivity = async (): Promise<any> => {
+  console.log('Testing chunked upload API connectivity...');
+  
+  try {
+    // Test the debug endpoint
+    console.log(`GET ${API_BASE_URL}/api/documents/chunked_upload_status/`);
+    const response = await api.get('/api/documents/chunked_upload_status/');
+    console.log('Debug endpoint response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Chunked upload API test failed:', error);
+    
+    // Enhanced error logging
+    if (error.response) {
+      console.error('Error response from server:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
+    throw error;
+  }
 };
 
 export default api; 

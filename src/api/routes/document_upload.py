@@ -531,4 +531,26 @@ async def upload_document(
         file_content=file_content,
         original_name=original_name,
         filename=file.filename
-    ) 
+    )
+
+@router.get("/chunked_upload_status/")
+async def chunked_upload_status():
+    """
+    Debugging endpoint to verify chunked upload API is working.
+    """
+    logger.info("Debug endpoint accessed: /api/documents/chunked_upload_status/")
+    
+    # Return status information
+    return JSONResponse(content={
+        "status": "ok",
+        "message": "Chunked upload API is working",
+        "server_time": time.ctime(),
+        "active_uploads": len(chunked_uploads),
+        "max_file_size": f"{MAX_FILE_SIZE_MB}MB",
+        "routes": [
+            "/api/documents/initiate_chunked_upload/",
+            "/api/documents/upload_chunk/", 
+            "/api/documents/finalize_chunked_upload/",
+            "/api/documents/chunked_upload_status/"
+        ]
+    }) 

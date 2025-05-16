@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { uploadDocument, UploadProgressInfo } from '../../services/api';
+import { uploadDocument, uploadChunkedFile, UploadProgressInfo, testChunkedUploadConnectivity } from '../../services/api';
 
 const Container = styled.div`
   display: flex;
@@ -11,6 +11,7 @@ const Container = styled.div`
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
 `;
 
 const Form = styled.form`
@@ -149,12 +150,30 @@ const RetryButton = styled.button`
   }
 `;
 
+const DebugButton = styled.button`
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  background: transparent;
+  border: 1px solid #ccc;
+  color: #666;
+  cursor: pointer;
+  opacity: 0.5;
+  
+  &:hover {
+    opacity: 1;
+  }
+`;
+
 const DocumentUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [progress, setProgress] = useState<UploadProgressInfo | null>(null);
   const [uploadFailed, setUploadFailed] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -225,7 +244,10 @@ const DocumentUpload: React.FC = () => {
         type: selectedFile.type,
       });
       
-      await uploadDocument(selectedFile, selectedFile.name, handleProgressUpdate);
+      console.log('Using chunked upload directly, bypassing size check');
+      // Use the chunked upload method directly
+      await uploadChunkedFile(selectedFile, selectedFile.name, handleProgressUpdate);
+      
       setMessage({ text: 'Document uploaded successfully!', type: 'success' });
       setSelectedFile(null);
       // Reset the file input
@@ -287,6 +309,23 @@ const DocumentUpload: React.FC = () => {
     };
   };
 
+  const handleDebugClick = async () => {
+    try {
+      const result = await testChunkedUploadConnectivity();
+      setDebugInfo(JSON.stringify(result, null, 2));
+      setMessage({
+        text: 'API connectivity test success. Check console for details.',
+        type: 'info'
+      });
+    } catch (error) {
+      console.error('Debug test failed:', error);
+      setMessage({
+        text: 'API connectivity test failed. Check console for details.',
+        type: 'error'
+      });
+    }
+  };
+
   return (
     <Container>
       <Form onSubmit={handleSubmit}>
@@ -338,6 +377,14 @@ const DocumentUpload: React.FC = () => {
           {message.text}
         </Message>
       )}
+      {debugInfo && (
+        <pre style={{ fontSize: '0.7rem', maxHeight: '150px', overflow: 'auto', marginTop: '10px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
+          {debugInfo}
+        </pre>
+      )}
+      <DebugButton type="button" onClick={handleDebugClick}>
+        Test API
+      </DebugButton>
     </Container>
   );
 };
