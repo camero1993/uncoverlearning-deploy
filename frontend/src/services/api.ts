@@ -142,16 +142,11 @@ const uploadChunkWithRetry = async (
   retryCount = 0
 ): Promise<any> => {
   try {
-    // Use explicit content-type to ensure the server recognizes it correctly
     return await api.post('/api/documents/upload_chunk/', {
       upload_id: uploadId,
       chunk_index: chunkIndex,
       total_chunks: totalChunks,
       chunk_data: chunkData
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
     });
   } catch (error: any) {
     // If we haven't exceeded max retries, try again
@@ -168,7 +163,7 @@ const uploadChunkWithRetry = async (
 };
 
 // Chunked upload for larger files
-export const uploadChunkedFile = async (
+const uploadChunkedFile = async (
   file: File, 
   filename: string, 
   onProgress?: ProgressCallback
@@ -177,8 +172,7 @@ export const uploadChunkedFile = async (
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   
   console.log(`Starting chunked upload for ${filename}`);
-  console.log(`File details: Size=${(file.size / (1024 * 1024)).toFixed(2)}MB, Chunks=${totalChunks}`);
-  console.log(`API Base URL: ${API_BASE_URL}`);
+  console.log(`File details: Size=${(file.size / 1024 / 1024).toFixed(2)}MB, Chunks=${totalChunks}`);
   
   onProgress?.({
     loaded: 0,
@@ -191,19 +185,13 @@ export const uploadChunkedFile = async (
   try {
     // Step 1: Initialize chunked upload
     console.log('Initializing chunked upload');
-    console.log(`POST ${API_BASE_URL}/api/documents/initiate_chunked_upload/`);
     const initResponse = await api.post('/api/documents/initiate_chunked_upload/', {
       file_name: filename,
       total_chunks: totalChunks,
       total_size: file.size,
       mime_type: file.type
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
     });
     
-    console.log('Initialization response:', initResponse.data);
     const uploadId = initResponse.data.upload_id;
     console.log(`Chunked upload initialized with ID: ${uploadId}`);
     
@@ -275,10 +263,6 @@ export const uploadChunkedFile = async (
     const finalizeResponse = await api.post('/api/documents/finalize_chunked_upload/', {
       upload_id: uploadId,
       original_name: filename
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
     });
     
     console.log('Chunked upload finalized, response:', finalizeResponse.data);
@@ -294,21 +278,6 @@ export const uploadChunkedFile = async (
     return finalizeResponse.data;
   } catch (error: any) {
     console.error('Chunked upload error:', error);
-    
-    // Enhanced error logging
-    if (error.response) {
-      console.error('Error response from server:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    } else {
-      console.error('Error setting up request:', error.message);
-    }
-    
     throw error;
   }
 };
@@ -330,43 +299,29 @@ export const uploadDocument = async (
   onProgress?: ProgressCallback
 ): Promise<any> => {
   const MAX_DIRECT_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
-  
-  // Enhanced logging for debugging
-  console.log('------ UPLOAD DOCUMENT ------');
-  console.log(`File: ${filename}`);
-  console.log(`Size: ${file.size} bytes (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
-  console.log(`Type: ${file.type}`);
-  console.log(`Threshold: ${MAX_DIRECT_UPLOAD_SIZE} bytes (${MAX_DIRECT_UPLOAD_SIZE / (1024 * 1024)} MB)`);
-  console.log(`Should use chunked upload: ${file.size > MAX_DIRECT_UPLOAD_SIZE}`);
+
+  // ADDED: Detailed logging for diagnostics
+  console.log('[uploadDocument] File details:', {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    maxDirect: MAX_DIRECT_UPLOAD_SIZE,
+    decision_shouldBeChunked: file.size > MAX_DIRECT_UPLOAD_SIZE
+  });
   
   try {
-    // For larger files, use chunked upload
     if (file.size > MAX_DIRECT_UPLOAD_SIZE) {
-      console.log(`File is larger than ${MAX_DIRECT_UPLOAD_SIZE / (1024 * 1024)}MB, using chunked upload`);
+      console.log(`[uploadDocument] File size (${file.size} bytes) > MAX_DIRECT_UPLOAD_SIZE (${MAX_DIRECT_UPLOAD_SIZE} bytes). Using chunked upload.`);
       return await uploadChunkedFile(file, filename, onProgress);
     }
-    
-    // For smaller files, use direct upload
-    console.log(`File is smaller than ${MAX_DIRECT_UPLOAD_SIZE / (1024 * 1024)}MB, using direct upload`);
+    console.log(`[uploadDocument] File size (${file.size} bytes) <= MAX_DIRECT_UPLOAD_SIZE (${MAX_DIRECT_UPLOAD_SIZE} bytes). Using direct upload.`);
     return await uploadSingleFile(file, filename, onProgress);
   } catch (error: any) {
-    // If direct upload fails with a specific error, try chunked upload
-    if (error.response?.status === 413 || error.message === 'CHUNKED_UPLOAD_REQUIRED') {
-      console.log('Switching to chunked upload after receiving 413 error');
+    if (error.message === 'CHUNKED_UPLOAD_REQUIRED') {
+      console.log('[uploadDocument] Switching to chunked upload after CHUNKED_UPLOAD_REQUIRED error.');
       return await uploadChunkedFile(file, filename, onProgress);
     }
-    
-    // Otherwise, pass through the error
-    console.error('Upload error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      response: error.response ? {
-        status: error.response.status,
-        data: error.response.data
-      } : 'No response'
-    });
-    
+    console.error('[uploadDocument] Error:', error);
     throw error;
   }
 };
@@ -409,37 +364,6 @@ export const getChatHistory = async (): Promise<Message[]> => {
 export const clearChatHistory = async (): Promise<void> => {
   console.log(`clearChatHistory: DELETEing to ${API_BASE_URL}/api/queries/chat-history`);
   await api.delete('/api/queries/chat-history');
-};
-
-// Test function to check chunked upload API connectivity
-export const testChunkedUploadConnectivity = async (): Promise<any> => {
-  console.log('Testing chunked upload API connectivity...');
-  
-  try {
-    // Test the debug endpoint
-    console.log(`GET ${API_BASE_URL}/api/documents/chunked_upload_status/`);
-    const response = await api.get('/api/documents/chunked_upload_status/');
-    console.log('Debug endpoint response:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('Chunked upload API test failed:', error);
-    
-    // Enhanced error logging
-    if (error.response) {
-      console.error('Error response from server:', {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    } else {
-      console.error('Error setting up request:', error.message);
-    }
-    
-    throw error;
-  }
 };
 
 export default api; 
