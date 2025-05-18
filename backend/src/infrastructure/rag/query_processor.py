@@ -9,6 +9,8 @@ from langchain.chains import ConversationalRetrievalChain
 from src.infrastructure.vector_store.supabase_store import LangChainVectorStore
 import os
 from dotenv import load_dotenv
+from langchain.schema import BaseMessage
+from langchain.chains.conversational_retrieval.base import _get_chat_history
 
 # Load environment variables
 load_dotenv()
@@ -107,10 +109,9 @@ When answering:
         Returns:
             Dictionary containing the answer and source documents
         """
-        # Get query embedding for hybrid search
+        # 1. Perform hybrid search to get documents
         query_embedding = self.vector_store.embeddings.embed_query(question)
         
-        # Perform hybrid search
         search_results = self.vector_store.hybrid_search(
             query=question,
             query_embedding=query_embedding,
@@ -127,28 +128,59 @@ When answering:
                 "source_documents": []
             }
         
-        # Convert search results to LangChain documents
         documents = [
             Document(
-                page_content=result["extractedText"],
+                page_content=result["content"],
                 metadata={
-                    "id": result["id"],
-                    "fileId": result["fileId"],
-                    "position": result["position"],
-                    "originalName": result["originalName"],
-                    "downloadUrl": result["downloadUrl"]
+                    "id": result.get("id"),
+                    "fileId": result.get("fileId"),
+                    "position": result.get("position"),
+                    "originalName": result.get("originalName"),
+                    "downloadUrl": result.get("downloadUrl")
                 }
             )
             for result in search_results
         ]
         
-        # Run the chain
-        response = self.chain.invoke({
-            "question": question,
-            "chat_history": self.memory.chat_memory.messages
-        })
+        # 2. Get current chat history
+        current_chat_history_messages: List[BaseMessage] = self.memory.chat_memory.messages
+
+        # 3. Generate standalone question if history exists
+        new_question = question
+        if current_chat_history_messages:
+            chat_history_str = _get_chat_history(current_chat_history_messages)
+            # The question_generator is an LLMChain, its output_key is typically 'text'
+            question_generator_output = self.chain.question_generator.invoke({
+                "question": question,
+                "chat_history": chat_history_str
+            })
+            new_question = question_generator_output[self.chain.question_generator.output_key]
+
+        # 4. Invoke combine_docs_chain with our documents and the (new) question
+        # The combine_docs_chain (e.g., StuffDocumentsChain) takes "input_documents", 
+        # "question", and any other variables from its prompt (e.g., "chat_history").
+        # Our qa_prompt (used by combine_docs_chain) expects "chat_history" as MessagesPlaceholder.
+        combine_docs_input = {
+            "input_documents": documents,
+            "question": new_question,
+            "chat_history": current_chat_history_messages # Pass List[BaseMessage] for MessagesPlaceholder
+        }
         
+        # The output is a dict, typically with a key like 'output_text'.
+        # ConversationalRetrievalChain maps this to "answer".
+        # We use combine_docs_chain.output_key to be robust.
+        generated_response = self.chain.combine_docs_chain.invoke(combine_docs_input)
+        final_answer = generated_response[self.chain.combine_docs_chain.output_key]
+        
+        # 5. Manually update memory
+        # Use the original question and the final answer for memory.
+        self.memory.save_context(
+            {"question": question}, # Inputs to the chain for this turn
+            {"answer": final_answer}  # Outputs from the chain for this turn
+        )
+        
+        # Return the answer and the source documents we fetched and used
         return {
-            "answer": response["answer"],
+            "answer": final_answer,
             "source_documents": documents
         } 

@@ -40,12 +40,12 @@ except Exception as e:
 try:
     logger.info("Initializing vector store with Supabase URL=%s, table=%s", 
                 settings.SUPABASE_URL, settings.SUPABASE_TABLE)
-vector_store = LangChainVectorStore(
-    supabase_url=settings.SUPABASE_URL,
-    supabase_key=settings.SUPABASE_KEY,
-    gemini_api_key=settings.GEMINI_API_KEY,
-    table_name=settings.SUPABASE_TABLE
-)
+    vector_store = LangChainVectorStore(
+        supabase_url=settings.SUPABASE_URL,
+        supabase_key=settings.SUPABASE_KEY,
+        gemini_api_key=settings.GEMINI_API_KEY,
+        table_name=settings.SUPABASE_TABLE
+    )
     logger.info("Vector store initialized successfully")
     
     # Verify GCP credentials
@@ -63,9 +63,8 @@ vector_store = LangChainVectorStore(
     except Exception as e:
         logger.warning(f"GCP credentials verification failed: {str(e)}")
         logger.warning("Document uploads may fail if GCP access is not configured properly")
-        
 except Exception as e:
-    logger.error("Failed to initialize vector store: %s", str(e))
+    logger.error(f"Failed to initialize vector store: {str(e)}")
     logger.error(traceback.format_exc())
     raise
 
@@ -351,11 +350,9 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             logger.info(f"[{request_id}] Processing PDF document")
             start_process = time.time()
             try:
-                # Log document processor settings for debugging
                 logger.debug(f"[{request_id}] Document processor configuration: chunk_size={document_processor.chunk_size}")
                 documents = document_processor.process_pdf(pdf_path=temp_file_path)
                 logger.info(f"[{request_id}] PDF processed successfully. Extracted {len(documents)} chunks in {time.time() - start_process:.2f} seconds")
-                # Log a sample of the first document for debugging
                 if documents and len(documents) > 0:
                     logger.debug(f"[{request_id}] First document sample: {documents[0].page_content[:100]}...")
             except Exception as e:
@@ -367,7 +364,7 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             logger.info(f"[{request_id}] Generating embeddings")
             start_embed = time.time()
             try:
-            embeddings = document_processor.generate_embeddings(documents)
+                embeddings = document_processor.generate_embeddings(documents)
                 logger.info(f"[{request_id}] Embeddings generated successfully in {time.time() - start_embed:.2f} seconds")
             except Exception as e:
                 logger.error(f"[{request_id}] Failed to generate embeddings: {str(e)}")
@@ -378,13 +375,12 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             logger.info(f"[{request_id}] Uploading to Google Cloud Storage")
             start_gcp = time.time()
             try:
-                # Log GCP configuration for debugging
                 logger.debug(f"[{request_id}] GCP destination folder: {settings.GCP_DESTINATION_FOLDER}")
-            gcp_url = vector_store.upload_to_gcp(
-                buffer=file_content,
+                gcp_url = vector_store.upload_to_gcp(
+                    buffer=file_content,
                     filename=filename,
-                destination=settings.GCP_DESTINATION_FOLDER
-            )
+                    destination=settings.GCP_DESTINATION_FOLDER
+                )
                 logger.info(f"[{request_id}] File uploaded to GCP successfully in {time.time() - start_gcp:.2f} seconds")
                 logger.debug(f"[{request_id}] GCP URL: {gcp_url}")
             except Exception as e:
@@ -396,12 +392,11 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             logger.info(f"[{request_id}] Inserting file metadata to Supabase")
             start_meta = time.time()
             try:
-                # Log Supabase configuration for debugging
                 logger.debug(f"[{request_id}] Supabase table: {settings.SUPABASE_TABLE}")
-            file_id = vector_store.insert_file_metadata(
-                title=original_name,
-                link=gcp_url
-            )
+                file_id = vector_store.insert_file_metadata(
+                    title=original_name,
+                    link=gcp_url
+                )
                 logger.info(f"[{request_id}] File metadata inserted successfully in {time.time() - start_meta:.2f} seconds. File ID: {file_id}")
             except Exception as e:
                 logger.error(f"[{request_id}] Failed to insert file metadata: {str(e)}")
@@ -412,35 +407,31 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             logger.info(f"[{request_id}] Adding documents to vector store")
             start_vector = time.time()
             try:
-            metadata_list = [
-                {
-                        "id": f"{file_id}_chunk_{i}", # This will be the primary key for the chunk
-                        "fileId": file_id, # Foreign key to the files table
-                        "position": i, # Order of the chunk within the document
-                        "originalName": original_name, # Original name of the uploaded PDF
-                        "downloadUrl": gcp_url # Link to the PDF stored in GCP
-                        # page_content and embedding will be handled by SupabaseVectorStore
-                }
-                for i in range(len(documents))
-            ]
+                metadata_list = [
+                    {
+                        "id": f"{file_id}_chunk_{i}",
+                        "fileId": file_id,
+                        "position": i,
+                        "originalName": original_name,
+                        "downloadUrl": gcp_url
+                    }
+                    for i in range(len(documents))
+                ]
             
                 if len(documents) != len(metadata_list):
-                    # This should ideally not happen if metadata_list is derived from documents
                     logger.error(f"[{request_id}] Mismatch between number of documents ({len(documents)}) and metadata entries ({len(metadata_list)})")
                     raise ValueError("Mismatch between number of documents and metadata entries prepared.")
 
-                # Assign the constructed metadata to each document object
                 for doc, meta in zip(documents, metadata_list):
                     doc.metadata = meta
                 
-                # Now call add_documents with only the documents list
-                # The SupabaseVectorStore will use the .metadata attribute of each Document
-                vector_store.add_documents(documents)
+                vector_store.add_documents(documents, embeddings_list=embeddings)
                 logger.info(f"[{request_id}] Documents added to vector store successfully in {time.time() - start_vector:.2f} seconds")
             except Exception as e:
                 logger.error(f"[{request_id}] Failed to add documents to vector store: {str(e)}")
+                logger.error(traceback.format_exc())
+                raise HTTPException(status_code=500, detail=f"Failed to add documents to vector store: {str(e)}")
             
-            # Return success response
             total_time = time.time() - start_time
             logger.info(f"[{request_id}] Document upload and processing completed successfully in {total_time:.2f} seconds")
             
@@ -455,33 +446,17 @@ async def process_document(request_id: str, file_content: bytes, original_name: 
             })
             
         except HTTPException:
-            # Re-raise HTTP exceptions as they're already formatted correctly
             raise
         except Exception as e:
-            # Catch-all for any other exceptions
             logger.error(f"[{request_id}] Unexpected error in document processing: {str(e)}")
             logger.error(traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
     except HTTPException:
-        # Re-raise HTTP exceptions
         raise
     except Exception as e:
         logger.error(f"[{request_id}] Unhandled exception: {str(e)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-        finally:
-        # Clean up temporary files
-        logger.debug(f"[{request_id}] Cleaning up temporary files")
-        try:
-            if temp_file_path and os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
-                logger.debug(f"[{request_id}] Removed temporary file: {temp_file_path}")
-                
-            if temp_dir and os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
-                logger.debug(f"[{request_id}] Removed temporary directory: {temp_dir}")
-    except Exception as e:
-            logger.warning(f"[{request_id}] Failed to clean up temporary files: {str(e)}")
 
 @router.post("/upload_document/")
 async def upload_document(
@@ -535,10 +510,13 @@ async def upload_document(
     file_size_mb = total_size / (1024 * 1024)
     logger.info(f"[{request_id}] File size: {file_size_mb:.2f}MB")
     
+    # Convert bytearray to bytes before passing
+    file_content_as_bytes = bytes(file_content)
+    
     # Process the document using shared processing logic
     return await process_document(
         request_id=request_id,
-        file_content=file_content,
+        file_content=file_content_as_bytes, # Pass the bytes object
         original_name=original_name,
         filename=file.filename
     ) 

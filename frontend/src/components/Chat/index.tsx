@@ -8,15 +8,15 @@ interface ChatProps {
   fileTitle?: string | null;
 }
 
-const Container = styled.div<{ isOpen: boolean }>`
+const Container = styled.div<{ $isOpen: boolean }>`
   display: flex;
   flex-direction: column;
   height: 100%;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
   transition: opacity 0.3s ease, visibility 0.3s ease;
 `;
 
@@ -57,13 +57,13 @@ const MessagesContainer = styled.div`
   gap: 1rem;
 `;
 
-const MessageBubble = styled.div<{ isUser: boolean }>`
+const MessageBubble = styled.div<{ $isUser: boolean }>`
   max-width: 80%;
   padding: 0.75rem 1rem;
   border-radius: 12px;
-  background: ${props => props.isUser ? '#5c6a5a' : '#f5f5f5'};
-  color: ${props => props.isUser ? '#ffffff' : '#000000'};
-  align-self: ${props => props.isUser ? 'flex-end' : 'flex-start'};
+  background: ${props => props.$isUser ? '#5c6a5a' : '#f5f5f5'};
+  color: ${props => props.$isUser ? '#ffffff' : '#000000'};
+  align-self: ${props => props.$isUser ? 'flex-end' : 'flex-start'};
   font-size: 0.875rem;
   line-height: 1.5;
 `;
@@ -261,23 +261,23 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
   };
 
   return (
-    <Container isOpen={isOpen}>
+    <Container $isOpen={isOpen} data-testid="chat-container">
       <Header>
-        <Title>Chat with Document</Title>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <ClearButton onClick={handleClearChat}>Clear Chat</ClearButton>
-          <CloseButton onClick={onClose}>&times;</CloseButton>
+        <Title>{fileTitle ? `Chat: ${fileTitle}` : 'Chat'}</Title>
+        <div>
+          <ClearButton onClick={handleClearChat} style={{ marginRight: '0.5rem' }}>Clear</ClearButton>
+          <CloseButton onClick={onClose} aria-label="Close chat">&times;</CloseButton>
         </div>
       </Header>
       <MessagesContainer>
         {messages.map((message, index) => (
-          <MessageBubble key={index} isUser={message.role === 'user'}>
+          <MessageBubble key={index} $isUser={message.role === 'user'}>
             {message.content}
           </MessageBubble>
         ))}
         {isLoading && (
-          <LoadingIndicator>
-            Thinking...
+          <LoadingIndicator aria-label="Assistant is typing">
+            Assistant is typing
           </LoadingIndicator>
         )}
         <div ref={messagesEndRef} />
@@ -287,7 +287,8 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask a question about your document..."
+          placeholder="Ask a question..."
+          aria-label="Chat input"
           disabled={isLoading}
         />
         <SendButton type="submit" disabled={isLoading || !input.trim()}>

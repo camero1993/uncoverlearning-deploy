@@ -33,7 +33,7 @@ class LangChainVectorStore:
         supabase_key: Optional[str] = None,
         gemini_api_key: Optional[str] = None,
         table_name: str = "chunks",
-        text_column: str = "extractedText"
+        text_column: str = "content"
     ):
         """
         Initialize the vector store.
@@ -50,9 +50,10 @@ class LangChainVectorStore:
         self.gemini_api_key = gemini_api_key or os.getenv("GEMINI_API_KEY")
         self.gcp_bucket = os.getenv("BUCKET")
         self.table_name = table_name
+        self.text_column = text_column
         
-        if not all([self.supabase_url, self.supabase_key, self.gemini_api_key, self.table_name]):
-            raise ValueError("Missing required credentials or table name. Please provide or set environment variables.")
+        if not all([self.supabase_url, self.supabase_key, self.gemini_api_key, self.table_name, self.text_column]):
+            raise ValueError("Missing required credentials, table name, or text column name. Please provide or set environment variables.")
         
         # Initialize Supabase client
         self.supabase = create_client(self.supabase_url, self.supabase_key)
@@ -167,20 +168,85 @@ class LangChainVectorStore:
     
     def add_documents(
         self,
-        documents: List[Document]
-    ) -> List[str]:
+        documents: List[Document],
+        embeddings_list: Optional[List[List[float]]] = None # Accept pre-computed embeddings
+    ) -> List[str]: # Return list of inserted chunk IDs
         """
-        Add documents to the vector store.
-        Each Document in the 'documents' list should already have its .metadata attribute set.
+        Manually add documents to the Supabase 'chunks' table, mapping metadata to columns.
+        Each Document in the 'documents' list should already have its .metadata attribute set
+        containing keys like 'fileId', 'position', 'originalName', 'downloadUrl'.
         
         Args:
-            documents: List of LangChain Document objects, each with populated .metadata
-            
+            documents: List of LangChain Document objects, each with populated .metadata.
+            embeddings_list: Optional list of embedding vectors, parallel to documents.
+                           If not provided, they will be generated.
+
         Returns:
-            List of document IDs (typically the internal IDs from the vector store)
+            List of UUIDs of the inserted chunks.
         """
-        # The underlying SupabaseVectorStore.add_documents expects metadata to be on each Document object
-        return self.vector_store.add_documents(documents)
+        inserted_chunk_ids: List[str] = []
+        document_embeddings: List[List[float]]
+
+        if embeddings_list is not None:
+            if len(documents) != len(embeddings_list):
+                print("ERROR: Mismatch between number of documents and provided embeddings_list.")
+                raise ValueError("Mismatch between documents and provided embeddings count.")
+            document_embeddings = embeddings_list
+            print(f"Using {len(document_embeddings)} pre-computed embeddings in add_documents.")
+        else:
+            document_contents = [doc.page_content for doc in documents]
+            if not document_contents:
+                print("No document contents to process in add_documents for embedding generation.")
+                return []
+            try:
+                document_embeddings = self.embeddings.embed_documents(document_contents)
+                print(f"Successfully generated {len(document_embeddings)} embeddings in add_documents.")
+            except Exception as e_embed:
+                print(f"ERROR generating embeddings in add_documents: {e_embed}")
+                raise
+
+        if len(documents) != len(document_embeddings):
+            # This check is a bit redundant if embeddings_list path is taken, but good for safety
+            print("ERROR: Mismatch between number of documents and final embeddings count.")
+            raise ValueError("Mismatch between documents and final embeddings count.")
+
+        print(f"Attempting to insert {len(documents)} chunks into Supabase table '{self.table_name}'...")
+        for i, (doc, embedding_vector) in enumerate(zip(documents, document_embeddings)):
+            # Ensure required metadata keys are present
+            if not all(k in doc.metadata for k in ["fileId", "position", "originalName", "downloadUrl"]):
+                print(f"ERROR: Missing required metadata for document at index {i}. Metadata: {doc.metadata}")
+                # Skip this document or raise an error
+                # For now, skipping to avoid partial failure of the batch without explicit error.
+                # Consider raising an error if all documents must succeed.
+                continue 
+
+            chunk_uuid = doc.metadata.get("id", str(uuid.uuid4())) # Use provided ID or generate new
+            
+            chunk_data_to_insert = {
+                "id": chunk_uuid,
+                "fileId": doc.metadata["fileId"],
+                "position": doc.metadata["position"],
+                "originalName": doc.metadata["originalName"],
+                "content": doc.page_content,  # Text content of the chunk
+                "downloadUrl": doc.metadata["downloadUrl"],
+                "embedding": embedding_vector # The generated embedding
+                # 'fts' (full-text search) and 'created_at' columns are expected 
+                # to be handled by Supabase (e.g., via triggers or default values).
+            }
+            try:
+                self.supabase.table(self.table_name).insert(chunk_data_to_insert).execute()
+                inserted_chunk_ids.append(chunk_uuid)
+            except Exception as e_insert_chunk:
+                print(f"ERROR inserting chunk {i} (ID: {chunk_uuid}, FileID: {doc.metadata.get('fileId')}): {e_insert_chunk}")
+                # Decide on error handling: continue, or re-raise to stop all processing?
+                # For now, re-raising to indicate failure of the overall add_documents call.
+                raise Exception(f"Failed to insert chunk {i} (ID: {chunk_uuid}). Original error: {e_insert_chunk}") 
+            
+            if (i + 1) % 20 == 0 or (i + 1) == len(documents):
+                    print(f"   ...stored chunk {i + 1}/{len(documents)} in add_documents.")
+        
+        print(f"Successfully inserted {len(inserted_chunk_ids)} chunks into '{self.table_name}'.")
+        return inserted_chunk_ids
     
     def similarity_search(
         self,

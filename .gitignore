@@ -32,4 +32,8 @@ dist/
 build/
 *.egg-info/
 
+# Credentials
+gcp-credentials.json
+*credentials*.json
+
 .cursorrules
