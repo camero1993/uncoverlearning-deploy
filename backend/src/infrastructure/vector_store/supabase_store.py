@@ -2,24 +2,13 @@ from typing import List, Dict, Any, Optional
 from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from supabase import create_client
+from supabase.client import Client, create_client
 from google.cloud import storage
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
 import uuid
-
-# Attempt to import load_gcp_credentials. Assuming gcp_credentials_loader.py is at the project root.
-# If it's located elsewhere (e.g., in src or src/core), adjust the import path accordingly.
-try:
-    from gcp_credentials_loader import load_gcp_credentials
-except ImportError:
-    # Fallback if the primary location fails, try assuming it's in src
-    try:
-        from src.gcp_credentials_loader import load_gcp_credentials
-    except ImportError:
-        load_gcp_credentials = None
-        print("WARNING: gcp_credentials_loader.py not found. GCP operations might fail if credentials are not implicitly available.")
+from backend.src.infrastructure.gcp.gcp_credentials_loader import load_gcp_credentials
 
 # Load environment variables
 load_dotenv()

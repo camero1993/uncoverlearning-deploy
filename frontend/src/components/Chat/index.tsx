@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { queryDocument, getChatHistory, clearChatHistory, Message } from '../../services/api';
 
 interface ChatProps {
@@ -263,23 +265,16 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
   return (
     <Container $isOpen={isOpen} data-testid="chat-container">
       <Header>
-        <Title>{fileTitle ? `Chat: ${fileTitle}` : 'Chat'}</Title>
-        <div>
-          <ClearButton onClick={handleClearChat} style={{ marginRight: '0.5rem' }}>Clear</ClearButton>
-          <CloseButton onClick={onClose} aria-label="Close chat">&times;</CloseButton>
-        </div>
+        <Title>{fileTitle ? `Chat: ${fileTitle}` : 'Chat with Document'}</Title>
+        <CloseButton onClick={onClose}>&times;</CloseButton>
       </Header>
       <MessagesContainer>
-        {messages.map((message, index) => (
-          <MessageBubble key={index} $isUser={message.role === 'user'}>
-            {message.content}
+        {messages.map((msg, index) => (
+          <MessageBubble key={index} $isUser={msg.role === 'user'}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
           </MessageBubble>
         ))}
-        {isLoading && (
-          <LoadingIndicator aria-label="Assistant is typing">
-            Assistant is typing
-          </LoadingIndicator>
-        )}
+        {isLoading && <LoadingIndicator>Thinking...</LoadingIndicator>}
         <div ref={messagesEndRef} />
       </MessagesContainer>
       <InputContainer onSubmit={handleSubmit}>
@@ -288,12 +283,14 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask a question..."
-          aria-label="Chat input"
           disabled={isLoading}
         />
         <SendButton type="submit" disabled={isLoading || !input.trim()}>
           Send
         </SendButton>
+        <ClearButton type="button" onClick={handleClearChat} disabled={isLoading}>
+          Clear Chat
+        </ClearButton>
       </InputContainer>
     </Container>
   );

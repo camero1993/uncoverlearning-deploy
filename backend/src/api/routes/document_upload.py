@@ -2,10 +2,10 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Body, Depe
 from fastapi.responses import JSONResponse
 from typing import Annotated, Optional, Dict, Any, List
 from pydantic import BaseModel, Field
-from src.core.app_settings import settings
-from src.core.error_handlers import DocumentProcessingError
-from src.infrastructure.document_processing.pdf_processor import LangChainDocumentProcessor
-from src.infrastructure.vector_store.supabase_store import LangChainVectorStore
+from backend.src.core.app_settings import settings
+from backend.src.core.error_handlers import DocumentProcessingError
+from backend.src.infrastructure.document_processing.pdf_processor import LangChainDocumentProcessor
+from backend.src.infrastructure.vector_store.supabase_store import LangChainVectorStore
 import os
 import tempfile
 import logging

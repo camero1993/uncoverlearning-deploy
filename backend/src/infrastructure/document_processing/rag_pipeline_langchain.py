@@ -4,19 +4,21 @@ from typing import Dict, Any, List
 from google.cloud import storage
 from datetime import timedelta
 from dotenv import load_dotenv
-from gcp_credentials_loader import load_gcp_credentials
-from src.infrastructure.document_processing.langchain_processor import LangChainDocumentProcessor
-from src.infrastructure.vector_store.supabase_store import LangChainVectorStore
+from langchain_core.documents import Document
+from backend.src.infrastructure.document_processing.langchain_processor import LangChainDocumentProcessor
+from backend.src.infrastructure.vector_store.supabase_store import LangChainVectorStore
+from backend.src.infrastructure.gcp.gcp_credentials_loader import load_gcp_credentials
+import logging
 
 # Load environment variables
 load_dotenv()
 
-# Load GCP credentials
-gcp_credentials = load_gcp_credentials()
-if gcp_credentials is None:
-    print("FATAL ERROR: Google Cloud credentials not loaded. Cannot proceed with GCP operations.")
-    import sys
-    sys.exit(1)
+# Load GCP credentials once at module level
+gcp_creds = load_gcp_credentials()
+if gcp_creds is None:
+    logging.warning("GCP credentials not loaded via gcp_credentials_loader. Relying on ADC or environment for storage.Client().")
+    # Depending on strictness, you might raise an error here if explicit creds are mandatory
+    # raise EnvironmentError("Failed to load GCP credentials explicitly. Check gcp_credentials_loader.py and GOOGLE_APPLICATION_CREDENTIALS.")
 
 # Environment variables
 SUPABASE_URL_ENV = os.getenv("SUPABASE_URL") # Renamed to avoid conflict with arg
@@ -29,7 +31,7 @@ def upload_to_gcp(buffer: bytes, filename: str, destination: str) -> str:
     if not GCP_BUCKET_ENV:
         raise ValueError("GCP_BUCKET environment variable is not set.")
         
-    storage_client = storage.Client(credentials=gcp_credentials)
+    storage_client = storage.Client(credentials=gcp_creds)
     bucket = storage_client.bucket(GCP_BUCKET_ENV)
     full_path = f"{destination}/{filename}"
 

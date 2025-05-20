@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from src.domain.entities.document import Document
+from backend.src.domain.entities.document import Document
 
 class DocumentRepository(ABC):
     """Abstract base class for document persistence."""

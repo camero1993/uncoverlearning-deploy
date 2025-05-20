@@ -1,8 +1,8 @@
 from typing import List, Optional
-from src.domain.entities.document import Document
-from src.infrastructure.repositories.document_repository import DocumentRepository
-from src.infrastructure.external.ai_service import AIService
-from src.infrastructure.external.storage_service import StorageService
+from backend.src.domain.entities.document import Document
+from backend.src.infrastructure.repositories.document_repository import DocumentRepository
+from backend.src.infrastructure.external.ai_service import AIService
+from backend.src.infrastructure.external.storage_service import StorageService
 
 class DocumentService:
     """Service for handling document processing and management."""

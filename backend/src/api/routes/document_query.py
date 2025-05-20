@@ -2,10 +2,10 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from src.core.app_settings import settings
-from src.core.error_handlers import QueryProcessingError
-from src.infrastructure.rag.query_processor import LangChainRAGChain
-from src.infrastructure.vector_store.supabase_store import LangChainVectorStore
+from backend.src.core.app_settings import settings
+from backend.src.core.error_handlers import QueryProcessingError
+from backend.src.infrastructure.rag.query_processor import LangChainRAGChain
+from backend.src.infrastructure.vector_store.supabase_store import LangChainVectorStore
 import logging
 import traceback
 import uuid
