@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: uncoverlearning-rag-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: BUCKET
+        sync: false
+      - key: GCP_DESTINATION_FOLDER
+        value: uploaded_docs
+      - key: SUPABASE_TABLE
+        value: chunks
+      - key: EMBEDDING_MODEL
+        value: models/text-embedding-004
+      - key: GENERATION_MODEL
+        value: models/gemini-1.5-pro-latest
+      - key: CHUNK_SIZE
+        value: "2000"
+      - key: CHUNK_OVERLAP
+        value: "300"
+      - key: MATCH_COUNT
+        value: "10"
+      - key: FULL_TEXT_WEIGHT
+        value: "1.0"
+      - key: SEMANTIC_WEIGHT
+        value: "1.0"
+      - key: RRF_K
+        value: "50" 
