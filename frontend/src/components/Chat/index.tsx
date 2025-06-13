@@ -8,6 +8,7 @@ interface ChatProps {
   onClose: () => void;
   isOpen: boolean;
   fileTitle?: string | null;
+  mode?: 'student' | 'professor' | null;
 }
 
 const Container = styled.div<{ $isOpen: boolean }>`
@@ -155,7 +156,7 @@ const LoadingIndicator = styled.div`
   }
 `;
 
-const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
+const Chat: React.FC<ChatProps> = ({ onClose, isOpen, fileTitle, mode = 'student' }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -225,22 +226,25 @@ const Chat: React.FC<ChatProps> = ({ isOpen, onClose, fileTitle }) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input.trim() };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessage = input.trim();
     setInput('');
     setIsLoading(true);
 
     try {
-      console.log('Querying document with:', input.trim(), 'File title:', fileTitle);
-      const response = await queryDocument(input.trim(), fileTitle || undefined);
-      console.log('Query response:', response);
+      // Add user message immediately
+      setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+
+      // Get response from backend
+      const response = await queryDocument(userMessage, fileTitle, mode);
+      
+      // Add assistant response
       setMessages(prev => [...prev, response]);
-    } catch (error: any) {
-      console.error('Failed to send message:', error);
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }
-      ]);
+    } catch (error) {
+      console.error('Error querying document:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your request. Please try again.'
+      }]);
     } finally {
       setIsLoading(false);
     }

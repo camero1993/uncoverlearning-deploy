@@ -40,10 +40,11 @@ const CardInner = styled.div<{ $isFlipped: boolean; $isLogoCard: boolean }>`
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform: ${props => props.$isFlipped ? 'rotateX(180deg)' : 'rotateX(0)'};
   cursor: ${props => props.$isLogoCard ? 'pointer' : 'default'};
+  position: relative;
 
-  ${props => props.$isLogoCard && props.$isFlipped && `
-    transition: none;
-  `}
+  &:hover {
+    transform: ${props => props.$isFlipped ? 'rotateX(180deg)' : 'rotateX(0) scale(1.02)'};
+  }
 `;
 
 const CardFace = styled.div<{ $isBack?: boolean }>`
@@ -51,6 +52,7 @@ const CardFace = styled.div<{ $isBack?: boolean }>`
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   background: #ffffff;
@@ -59,6 +61,7 @@ const CardFace = styled.div<{ $isBack?: boolean }>`
   padding: 2rem;
   transform: ${props => props.$isBack ? 'rotateX(180deg)' : 'rotateX(0)'};
   overflow: hidden;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
   ${props => !props.$isBack && `
     text-align: center;
@@ -147,17 +150,16 @@ const Flashcard: React.FC<FlashcardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleFlip = (e: React.MouseEvent) => {
-    if (!isLogoCard) {
-      e.stopPropagation();
+    e.stopPropagation();
+    if (!isExpanded) {
       setIsFlipped(!isFlipped);
     }
   };
 
   const handleExpand = (e: React.MouseEvent) => {
-    if (isLogoCard) {
+    if (isLogoCard && isFlipped) {
       e.stopPropagation();
       setIsExpanded(true);
-      setIsFlipped(true);
       onExpand?.();
     }
   };
@@ -180,7 +182,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
       <CardInner 
         $isFlipped={isFlipped}
         $isLogoCard={isLogoCard}
-        onClick={isLogoCard ? handleExpand : handleFlip}
+        onClick={isLogoCard ? handleFlip : handleFlip}
       >
         <CardFace>
           <ContentWrapper>
@@ -193,7 +195,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
             {isLogoCard && (
               <>
                 <MissionText>engineer equitable education everywhere</MissionText>
-                <CTAText onClick={handleExpand}>
+                <CTAText>
                   click to uncover our textbook tutor prototype
                 </CTAText>
               </>
@@ -204,7 +206,7 @@ const Flashcard: React.FC<FlashcardProps> = ({
           <BackButton onClick={isLogoCard ? handleCollapse : handleFlip}>
             &larr;
           </BackButton>
-          <ContentWrapper>
+          <ContentWrapper onClick={isLogoCard ? handleExpand : undefined}>
             {backContent}
           </ContentWrapper>
         </CardFace>

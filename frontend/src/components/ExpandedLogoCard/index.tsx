@@ -7,6 +7,7 @@ interface ExpandedLogoCardProps {
   onCollapse: () => void;
   logo: string;
   brandText: string;
+  mode: 'student' | 'professor' | null;
 }
 
 const Overlay = styled.div`
@@ -126,7 +127,7 @@ const HiddenInput = styled.input`
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 const MAX_FILE_SIZE_MB = MAX_FILE_SIZE / (1024 * 1024);
 
-const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText }) => {
+const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, brandText, mode }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -254,7 +255,7 @@ const ExpandedLogoCard: React.FC<ExpandedLogoCardProps> = ({ onCollapse, logo, b
           )}
         </PdfPanel>
         <ChatPanel>
-          <Chat isOpen={true} onClose={onCollapse} fileTitle={fileTitle} />
+          <Chat isOpen={true} onClose={onCollapse} fileTitle={fileTitle} mode={mode} />
         </ChatPanel>
       </Main>
     </Overlay>
