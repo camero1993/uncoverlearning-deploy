@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { queryDocument, getChatHistory, clearChatHistory, Message } from '../../services/api';
 
 interface ChatProps {
@@ -21,6 +24,7 @@ const Container = styled.div<{ $isOpen: boolean }>`
   opacity: ${props => props.$isOpen ? 1 : 0};
   visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  position: relative;
 `;
 
 const Header = styled.div`
@@ -29,12 +33,36 @@ const Header = styled.div`
   justify-content: space-between;
   padding: 1rem;
   border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  border-radius: 12px 12px 0 0;
+  z-index: 10;
+`;
+
+const HeaderContent = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
 `;
 
 const Title = styled.h3`
   margin: 0;
   font-size: 1.25rem;
   color: #5c6a5a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+`;
+
+const ButtonsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 `;
 
 const CloseButton = styled.button`
@@ -58,6 +86,7 @@ const MessagesContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-bottom: 80px; /* Add space for the fixed input container */
 `;
 
 const MessageBubble = styled.div<{ $isUser: boolean }>`
@@ -76,6 +105,12 @@ const InputContainer = styled.form`
   gap: 0.5rem;
   padding: 1rem;
   border-top: 1px solid #eee;
+  background: #ffffff;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0 0 12px 12px;
 `;
 
 const Input = styled.input`
@@ -266,20 +301,36 @@ const Chat: React.FC<ChatProps> = ({ onClose, isOpen, fileTitle, mode = 'student
     }
   };
 
+  const renderMessage = (message: Message, index: number) => {
+    return (
+      <MessageBubble key={index} $isUser={message.role === 'user'}>
+        <ReactMarkdown 
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          components={{
+            p: ({node, ...props}) => <p style={{margin: 0}} {...props} />
+          }}
+        >
+          {message.content}
+        </ReactMarkdown>
+      </MessageBubble>
+    );
+  };
+
   return (
-    <Container $isOpen={isOpen} data-testid="chat-container">
+    <Container $isOpen={isOpen}>
       <Header>
-        <Title>{fileTitle ? `Chat: ${fileTitle}` : 'Chat with Document'}</Title>
-        <CloseButton onClick={onClose}>&times;</CloseButton>
+        <HeaderContent>
+          <Title>{fileTitle || 'Chat'}</Title>
+          <ButtonsContainer>
+            <ClearButton onClick={handleClearChat}>Clear Chat</ClearButton>
+            <CloseButton onClick={onClose}>×</CloseButton>
+          </ButtonsContainer>
+        </HeaderContent>
       </Header>
-      <MessagesContainer>
-        {messages.map((msg, index) => (
-          <MessageBubble key={index} $isUser={msg.role === 'user'}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-          </MessageBubble>
-        ))}
+      <MessagesContainer ref={messagesEndRef}>
+        {messages.map((message, index) => renderMessage(message, index))}
         {isLoading && <LoadingIndicator>Thinking...</LoadingIndicator>}
-        <div ref={messagesEndRef} />
       </MessagesContainer>
       <InputContainer onSubmit={handleSubmit}>
         <Input
@@ -287,14 +338,10 @@ const Chat: React.FC<ChatProps> = ({ onClose, isOpen, fileTitle, mode = 'student
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask a question..."
-          disabled={isLoading}
         />
-        <SendButton type="submit" disabled={isLoading || !input.trim()}>
+        <SendButton type="submit" disabled={!input.trim() || isLoading}>
           Send
         </SendButton>
-        <ClearButton type="button" onClick={handleClearChat} disabled={isLoading}>
-          Clear Chat
-        </ClearButton>
       </InputContainer>
     </Container>
   );
