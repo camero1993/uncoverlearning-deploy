@@ -6,10 +6,10 @@ import axios from 'axios';
 // const API_BASE_URL = HARDCODED_API_URL; // Temporarily override environment variables
 
 // Use environment variable for API base URL, with a fallback for local development
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8001';
 
 console.log('API Configuration:');
-console.log('- process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log('- process.env.REACT_APP_API_BASE_URL:', process.env.REACT_APP_API_BASE_URL);
 // console.log('- Using hardcoded API URL for troubleshooting:', API_BASE_URL);
 console.log('- Effective API_BASE_URL being used:', API_BASE_URL);
 
