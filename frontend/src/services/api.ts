@@ -2,11 +2,11 @@ import axios from 'axios';
 
 // For troubleshooting - hardcode the Render URL instead of using environment variables
 // This will help determine if the environment variable is the issue
-// const HARDCODED_API_URL = 'https://uncoverlearning-deploy.onrender.com';
-// const API_BASE_URL = HARDCODED_API_URL; // Temporarily override environment variables
+ const HARDCODED_API_URL = 'https://uncoverlearning-deploy.onrender.com';
+const API_BASE_URL = HARDCODED_API_URL; // Temporarily override environment variables
 
 // Use environment variable for API base URL, with a fallback for local development
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+//const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 console.log('API Configuration:');
 console.log('- process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
