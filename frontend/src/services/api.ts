@@ -63,7 +63,7 @@ const uploadSingleFile = async (
   formData.append('file', file);
   formData.append('original_name', filename);
 
-  console.log(`uploadSingleFile: POSTing to ${API_BASE_URL}/api/upload_document/`);
+  console.log(`uploadSingleFile: POSTing to ${API_BASE_URL}/api/documents/upload_document/`);
   console.log(`File details: Name=${filename}, Size=${(file.size / 1024 / 1024).toFixed(2)}MB, Type=${file.type}`);
   
   onProgress?.({
@@ -75,7 +75,7 @@ const uploadSingleFile = async (
   });
   
   try {
-    const response = await api.post('/api/upload_document/', formData, {
+    const response = await api.post('/api/documents/upload_document/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
