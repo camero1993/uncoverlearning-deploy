@@ -1,4 +1,4 @@
-import os # Added for debugging
+import os # Added for debugging.
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.app_settings import settings
