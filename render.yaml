@@ -22,7 +22,7 @@ services:
       - key: EMBEDDING_MODEL
         value: models/text-embedding-004
       - key: GENERATION_MODEL
-        value: models/gemini-1.5-pro-latest
+        value: models/gemini-1.5-flash-latest
       - key: CHUNK_SIZE
         value: "2000"
       - key: CHUNK_OVERLAP
