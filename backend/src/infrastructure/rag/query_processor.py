@@ -67,7 +67,9 @@ class LangChainRAGChain:
         self,
         vector_store: LangChainVectorStore,
         gemini_api_key: Optional[str] = None,
-        model_name: str = "models/gemini-1.5-flash-latest",
+
+        model_name: str = "models/gemini-1.5-flash-latest", 
+
         mode: PromptMode = PromptMode.STUDENT
     ):
         """

@@ -36,7 +36,7 @@ class Settings:
     # Model Settings
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
-    GENERATION_MODEL: str = os.getenv("GENERATION_MODEL", "models/gemini-1.5-pro-latest")
+    GENERATION_MODEL: str = os.getenv("GENERATION_MODEL", "models/gemini-1.5-flash-latest")
     
     # Document Processing Settings
     CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "1000"))
