@@ -79,21 +79,10 @@ const ContentWrapper = styled.div`
   margin: 0 auto;
 `;
 
-const MissionText = styled.h1`
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  color: #5c6a5a;
-  text-transform: lowercase;
-  font-size: 2.5rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
-  max-width: 600px;
-`;
-
 const CTAText = styled.p`
   font-family: 'Montserrat', sans-serif;
   font-weight: 400;
-  font-size: 1.25rem;
+  font-size: 1.75rem;
   color: #000;
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
@@ -187,18 +176,10 @@ const Flashcard: React.FC<FlashcardProps> = ({
         <CardFace>
           <ContentWrapper>
             {frontContent}
-            {id === 'problem' && !isLogoCard && (
-              <Button onClick={handleFlip}>
-                see how
-              </Button>
-            )}
             {isLogoCard && (
-              <>
-                <MissionText>engineer equitable education everywhere</MissionText>
-                <CTAText>
-                  click to uncover our textbook tutor prototype
-                </CTAText>
-              </>
+              <CTAText>
+                click to uncover the future of studying
+              </CTAText>
             )}
           </ContentWrapper>
         </CardFace>

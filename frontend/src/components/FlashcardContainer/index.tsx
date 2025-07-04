@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import Flashcard from '../Flashcard';
+import Flashcard from '../Flashcard/';
 import { FlashcardData } from '../../types';
 
 const Container = styled.div`
