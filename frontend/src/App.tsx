@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import FlashcardContainer from './components/FlashcardContainer';
+import FlashcardContainer from './components/FlashcardContainer/';
 // import Chat from './components/Chat'; // Removed unused import
-import NotebookChat from './components/NotebookChat';
+import NotebookChat from './components/NotebookChat/';
 import { FlashcardData } from './types';
 
 // Import images
