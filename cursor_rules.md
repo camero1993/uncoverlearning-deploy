@@ -52,4 +52,4 @@ Finally, this will be the structure of our workflow together.
         1. This means your changes were close to what I asked for, but we must focus on making them better before moving on
     c. "Bad"
         1. This means the changes were far off what I asked for, and/or include errors and bugs. When I say bad and explain why, you must not follow up with code editing. Instead, explain why the edit caused the issue and what you need to do instead to fix it. From there I will confirm your next approach and we can continue with editing. 
-Depending on which of those words begin my post-prompt chats, my follow up will range from the next step to a reccomendation of a new approach to prevent errors and bugs. 
+Depending on which of those words begin my post-prompt chats, my follow up will range from the next step to a reccomendation of a new approach to prevent errors and bugs.
