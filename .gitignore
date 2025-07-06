@@ -36,4 +36,6 @@ build/
 gcp-credentials.json
 *credentials*.json
 
+# Cursor Rules (allow team members to have their own local versions)
 .cursorrules
+cursor_rules.md

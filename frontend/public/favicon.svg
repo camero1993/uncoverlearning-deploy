@@ -1,0 +1,37 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#1a1a1a"/>
+  
+  <!-- Tree/Network Structure -->
+  <!-- Main trunk -->
+  <path d="M16 8 L16 24" stroke="#8c9b8c" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Upper branches -->
+  <path d="M16 12 L12 8" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 12 L20 8" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 12 L10 10" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 12 L22 10" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Lower branches -->
+  <path d="M16 20 L10 22" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 20 L22 22" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 20 L8 24" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 20 L24 24" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 20 L12 26" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 20 L20 26" stroke="#8c9b8c" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Node circles -->
+  <circle cx="12" cy="8" r="1.5" fill="#8c9b8c"/>
+  <circle cx="20" cy="8" r="1.5" fill="#8c9b8c"/>
+  <circle cx="10" cy="10" r="1.5" fill="#8c9b8c"/>
+  <circle cx="22" cy="10" r="1.5" fill="#8c9b8c"/>
+  <circle cx="10" cy="22" r="1.5" fill="#8c9b8c"/>
+  <circle cx="22" cy="22" r="1.5" fill="#8c9b8c"/>
+  <circle cx="8" cy="24" r="1.5" fill="#8c9b8c"/>
+  <circle cx="24" cy="24" r="1.5" fill="#8c9b8c"/>
+  <circle cx="12" cy="26" r="1.5" fill="#8c9b8c"/>
+  <circle cx="20" cy="26" r="1.5" fill="#8c9b8c"/>
+  
+  <!-- Central junction circle -->
+  <circle cx="16" cy="16" r="2" fill="#8c9b8c"/>
+</svg> 
